@@ -1,0 +1,29 @@
+{
+  "name": "ai-organisation",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Managed AI organisation as a service. Entrepreneur submits an idea; an AI team (CEO → CTO → EM → Developer → QA → Security) runs the pipeline and writes real code to disk.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.6"
+  },
+  "scripts": {
+    "test": "node scripts/test-runtime.ts && node scripts/test-validate.ts && node scripts/test-llm-runner.ts",
+    "test:llm": "node scripts/test-llm-runner.ts",
+    "test:agents": "for a in ceo cto engineering-manager developer qa cybersecurity; do node scripts/test-agent.mjs agents/$a || exit 1; done",
+    "test:handoffs": "node scripts/test-handoff.mjs agents/ceo agents/cto && node scripts/test-handoff.mjs agents/cto agents/engineering-manager && node scripts/test-handoff.mjs agents/developer agents/qa && node scripts/test-handoff.mjs agents/qa agents/cybersecurity",
+    "test:all": "npm run test && npm run test:agents && npm run test:handoffs",
+    "pipeline": "node scripts/run-pipeline.ts --scenario fixtures/scenarios/waitlist-mvp",
+    "validate": "node scripts/validate-em-output.ts",
+    "typecheck": "tsc --noEmit",
+    "demo:real-llm": "node scripts/demo-real-llm.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.92.0",
+    "openai": "^6.35.0"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "taskId": "t-waitlist-storage-1",
+  "summary": "Audited the new Drizzle schema for waitlist_emails plus its barrel re-export. The change introduces a single Postgres table with parameterised column declarations and a foreign key to companies; it does not add a public endpoint, an authenticator, an external network call, or any LLM-driven flow. No critical or high-severity vulnerabilities were found. One medium PII concern is documented but is acceptable for MVP shipping per the decision rules; nothing here blocks proceed.",
+  "vulnerabilities": [
+    {
+      "severity": "medium",
+      "description": "lib/db/schema/waitlist-emails.ts declares email as plain text without column-level encryption or masking. Email addresses are PII; for an MVP waitlist with disk-level Postgres encryption this is an acceptable baseline, but the risk profile changes once production volume crosses the GDPR notification threshold or the company expands beyond the UK accountant ICP.",
+      "recommendation": "Add a security review note to revisit pgcrypto column-level encryption (or a hash-only retention strategy) before the waitlist exceeds 10,000 rows or the customer base expands beyond a single jurisdiction."
+    }
+  ],
+  "promptInjectionRisk": "Low. The two changed files contain no LLM-mediated I/O — the Drizzle schema and its barrel re-export only accept typed, parameterised values (uuid, text, timestamp) which Drizzle binds via prepared statements. There is no string interpolation into a model prompt, no untrusted output rendering, and no LLM-driven file write or shell call introduced by this change. The downstream POST /api/waitlist handler (a separate task) will be responsible for input validation; that boundary is out of scope for this audit.",
+  "decision": "GO",
+  "requiredFixes": []
+}

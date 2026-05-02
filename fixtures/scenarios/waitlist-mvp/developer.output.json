@@ -1,0 +1,25 @@
+{
+  "taskId": "t-waitlist-storage-1",
+  "implementationPlan": "Implement the waitlist_emails Drizzle schema in lib/db/schema/waitlist-emails.ts, mirroring the CTO databaseSchema entry exactly: uuid primary key with gen_random_uuid() default, company_id foreign key to companies, email and source text columns with the source default, created_at timestamptz with defaultNow, and a uniqueness constraint on (company_id, email) named per Drizzle convention. Re-export the new table from the lib/db/schema barrel so callers (the upcoming POST /api/waitlist handler) can import it cleanly. Ship a co-located vitest file that asserts the table name, column set, source default, and uniqueness constraint match the CTO spec.",
+  "files": [
+    {
+      "path": "lib/db/schema/waitlist-emails.ts",
+      "content": "import { pgTable, text, timestamp, unique, uuid } from \"drizzle-orm/pg-core\";\nimport { sql } from \"drizzle-orm\";\n\nimport { companies } from \"./companies.ts\";\n\nexport const waitlistEmails = pgTable(\n  \"waitlist_emails\",\n  {\n    id: uuid(\"id\")\n      .primaryKey()\n      .default(sql`gen_random_uuid()`),\n    companyId: uuid(\"company_id\")\n      .notNull()\n      .references(() => companies.id),\n    email: text(\"email\").notNull(),\n    source: text(\"source\").notNull().default(\"landing-v1\"),\n    createdAt: timestamp(\"created_at\", { withTimezone: true })\n      .notNull()\n      .defaultNow(),\n  },\n  (table) => ({\n    uniqueCompanyEmail: unique(\"waitlist_emails_company_email_unique\").on(\n      table.companyId,\n      table.email,\n    ),\n  }),\n);\n\nexport type WaitlistEmail = typeof waitlistEmails.$inferSelect;\nexport type NewWaitlistEmail = typeof waitlistEmails.$inferInsert;\n"
+    },
+    {
+      "path": "lib/db/schema/index.ts",
+      "content": "export { companies } from \"./companies.ts\";\nexport {\n  waitlistEmails,\n  type WaitlistEmail,\n  type NewWaitlistEmail,\n} from \"./waitlist-emails.ts\";\n"
+    }
+  ],
+  "tests": [
+    {
+      "description": "waitlistEmails declares the table name, columns, source default, and uniqueness constraint required by the CTO databaseSchema",
+      "code": "import { describe, expect, it } from \"vitest\";\nimport { getTableConfig } from \"drizzle-orm/pg-core\";\n\nimport { waitlistEmails } from \"./waitlist-emails.ts\";\n\ndescribe(\"waitlistEmails schema\", () => {\n  const config = getTableConfig(waitlistEmails);\n\n  it(\"is named waitlist_emails per the CTO spec\", () => {\n    expect(config.name).toBe(\"waitlist_emails\");\n  });\n\n  it(\"exposes id, company_id, email, source, created_at columns\", () => {\n    const names = config.columns.map((c) => c.name).sort();\n    expect(names).toEqual([\n      \"company_id\",\n      \"created_at\",\n      \"email\",\n      \"id\",\n      \"source\",\n    ]);\n  });\n\n  it(\"defaults source to 'landing-v1'\", () => {\n    const source = config.columns.find((c) => c.name === \"source\");\n    expect(source?.default).toBe(\"landing-v1\");\n  });\n\n  it(\"declares a unique constraint on (company_id, email)\", () => {\n    const u = config.uniqueConstraints.find(\n      (x) => x.name === \"waitlist_emails_company_email_unique\",\n    );\n    expect(u).toBeDefined();\n    const cols = u!.columns.map((c) => c.name).sort();\n    expect(cols).toEqual([\"company_id\", \"email\"]);\n  });\n});\n"
+    }
+  ],
+  "notes": [
+    "lib/db/schema/companies.ts is assumed to already exist (cycle-0 schema). If it does not, the foreign key import will fail at type-check time — flag back to the Engineering Manager to add a 'set up companies table' task before this one runs.",
+    "No SQL migration file was hand-written. Run `drizzle-kit generate` against this schema to produce the migration; that step belongs to the build pipeline, not the developer agent.",
+    "No rate-limit added: the CTO listed it as a deferred risk on /api/waitlist, and the task description did not call for it."
+  ]
+}

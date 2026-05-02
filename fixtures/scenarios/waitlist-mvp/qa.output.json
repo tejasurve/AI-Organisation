@@ -1,0 +1,51 @@
+{
+  "taskId": "t-waitlist-storage-1",
+  "testPlan": [
+    "Verify the file set follows the architecture: schema lives at lib/db/schema/waitlist-emails.ts and is re-exported from lib/db/schema/index.ts (DoD criterion 1).",
+    "Verify every field from the task description appears in lib/db/schema/waitlist-emails.ts with the correct type, nullability, default, and FK target (DoD criterion 2).",
+    "Verify the unique constraint covers exactly (company_id, email) and is named per Drizzle convention (DoD criterion 2).",
+    "Walk every it-block in the vitest file and confirm each assertion targets observable schema shape, not implementation detail (DoD criterion 3).",
+    "Search files[].content for forbidden placeholder strings (TODO, FIXME, XXX, 'not implemented') (DoD criterion 4).",
+    "Verify the developer notes accurately surface assumptions and deferred concerns (companies table dependency, drizzle-kit migration strategy, deferred rate-limit risk).",
+    "Verify the migration generation strategy is consistent with the architecture (drizzle-kit generate, not hand-written SQL)."
+  ],
+  "results": [
+    {
+      "test": "File set follows the architecture: schema + barrel re-export under lib/db/schema/.",
+      "status": "pass",
+      "details": "files[0].path = lib/db/schema/waitlist-emails.ts, files[1].path = lib/db/schema/index.ts. Both repo-relative, forward-slashed, and consistent with the SKILLS.md path conventions for the chosen stack. No extra files."
+    },
+    {
+      "test": "Every field from the task description appears with the correct shape.",
+      "status": "pass",
+      "details": "Traced lib/db/schema/waitlist-emails.ts line by line: id is uuid().primaryKey().default(sql`gen_random_uuid()`), company_id is uuid().notNull().references(() => companies.id), email is text().notNull(), source is text().notNull().default(\"landing-v1\"), created_at is timestamp({ withTimezone: true }).notNull().defaultNow(). 5/5 fields verified against the inlined CTO spec."
+    },
+    {
+      "test": "Unique constraint on (company_id, email) declared and named per Drizzle convention.",
+      "status": "pass",
+      "details": "uniqueCompanyEmail = unique(\"waitlist_emails_company_email_unique\").on(table.companyId, table.email). Constraint columns and constraint name both match the field list in the task description."
+    },
+    {
+      "test": "Vitest assertions target observable schema shape, not implementation detail.",
+      "status": "pass",
+      "details": "4 it-blocks all read getTableConfig(waitlistEmails) and assert against config.name, config.columns[].name, config.columns[].default, and config.uniqueConstraints[].name/columns — all declarative metadata, no internal API leakage. Default-value assertion path is a documented Drizzle 0.30+ behaviour and is reproducible against the same fixture in CI."
+    },
+    {
+      "test": "No forbidden placeholder strings in files[].content.",
+      "status": "pass",
+      "details": "Scanned both file contents for TODO, FIXME, XXX, 'not implemented'. Zero matches across 870 characters of source."
+    },
+    {
+      "test": "Developer notes accurately surface assumptions and deferred concerns.",
+      "status": "pass",
+      "details": "Note 1 (companies table assumption): consistent with the import statement and the CTO architecture's references to a multi-tenant data model. Note 2 (drizzle-kit migration): consistent with no migration file being included and the chosen ORM. Note 3 (deferred rate-limit): matches the CTO risks list; rate-limit is correctly NOT operationalised because the task description does not call for it."
+    },
+    {
+      "test": "Migration generation strategy is consistent with the architecture.",
+      "status": "pass",
+      "details": "Developer correctly did not hand-write SQL. Migration generation via drizzle-kit is the canonical Drizzle workflow and is delegated to the build pipeline, as noted. No conflict with the architecture."
+    }
+  ],
+  "bugs": [],
+  "decision": "PASS"
+}

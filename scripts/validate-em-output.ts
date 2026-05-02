@@ -37,11 +37,12 @@ if (args[0] === "--from-prompt") {
   const agentDir = isAbsolute(args[1]) ? args[1] : resolve(process.cwd(), args[1]);
   const promptPath = join(agentDir, "prompt.md");
   const prompt = await readFile(promptPath, "utf8");
-  raw = pickEMWorkedExample(prompt);
-  if (!raw) {
+  const picked = pickEMWorkedExample(prompt);
+  if (!picked) {
     console.error(`No json block with top-level keys [features, tasks] found in ${promptPath}`);
     process.exit(2);
   }
+  raw = picked;
 } else if (args[0] === "-") {
   const chunks: Buffer[] = [];
   for await (const chunk of process.stdin) chunks.push(chunk as Buffer);

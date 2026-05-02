@@ -1,0 +1,18 @@
+{
+  "mission": "Help solo UK accountants reclaim 10 hours a week by automating low-value bookkeeping tasks.",
+  "okrs": [
+    "Validate ICP fit: complete 5 discovery calls with solo UK accountants billing £50k–£150k/yr within 14 days",
+    "Pin down the single most painful bookkeeping task to automate first, with evidence from at least 3 of those calls",
+    "Decide go/no-go on building an MVP by day 21, based on 3+ unprompted 'I'd pay for this' signals"
+  ],
+  "priorities": [
+    "Recruit 5 ICP-fit accountants for discovery calls",
+    "Stand up a one-page landing site to capture inbound interest"
+  ],
+  "delegation": {
+    "cto": "Stand up a one-page Next.js landing site on Vercel that captures email addresses for an inbound waitlist. No backend logic beyond writing emails to Postgres. Ready by end of day 3.",
+    "cmo": "Book 5 discovery calls in 14 days. £0 paid spend.",
+    "cfo": "",
+    "cpo": "Produce 10-question discovery script by EOD2."
+  }
+}
