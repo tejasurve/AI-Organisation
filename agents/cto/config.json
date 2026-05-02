@@ -1,0 +1,117 @@
+{
+  "$schema": "https://paperclipai.dev/schemas/agent-hire.json",
+  "name": "CTO",
+  "role": "cto",
+  "title": "Chief Technology Officer",
+  "icon": "code",
+  "reportsTo": null,
+  "reportsToRole": "ceo",
+  "capabilities": "Translates the CEO's delegation brief into a concrete technical plan: architecture, API contracts, database schema, and risks. Owns all stack and architecture decisions. Escalates only when the brief breaks technical invariants or compliance scope.",
+  "adapterType": "claude_local",
+  "adapterConfig": {
+    "model": "claude-opus-4-7-thinking-xhigh",
+    "fallbackModel": "claude-opus-4-7-high",
+    "thinking": {
+      "enabled": true,
+      "effort": "xhigh"
+    },
+    "maxOutputTokens": 8192,
+    "temperature": 0.2,
+    "responseFormat": "json"
+  },
+  "instructionsBundle": {
+    "entryFile": "AGENTS.md",
+    "files": {
+      "AGENTS.md": "@file:./prompt.md",
+      "SKILLS.md": "@file:./SKILLS.md"
+    }
+  },
+  "runtimeConfig": {
+    "heartbeat": {
+      "enabled": false,
+      "wakeOnDemand": true
+    }
+  },
+  "inputContract": {
+    "format": "structured-task-body",
+    "sections": [
+      {
+        "marker": "=== CEO Output ===",
+        "format": "json",
+        "schemaRef": "../ceo/config.json#/outputContract/schema",
+        "extract": "delegation.cto"
+      },
+      {
+        "marker": "=== Company Context ===",
+        "format": "json",
+        "schema": {
+          "type": "object",
+          "additionalProperties": true,
+          "required": ["phase", "cycle"],
+          "properties": {
+            "phase": { "type": "string" },
+            "cycle": { "type": "number" },
+            "priorCycle": {}
+          }
+        }
+      }
+    ]
+  },
+  "outputContract": {
+    "format": "json",
+    "schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["architecture", "apiContracts", "databaseSchema", "risks"],
+      "properties": {
+        "architecture": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["frontend", "backend", "database", "infrastructure"],
+          "properties": {
+            "frontend": { "type": "string" },
+            "backend": { "type": "string" },
+            "database": { "type": "string" },
+            "infrastructure": { "type": "string" }
+          }
+        },
+        "apiContracts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["endpoint", "method", "description", "request", "response"],
+            "properties": {
+              "endpoint": { "type": "string" },
+              "method": { "type": "string" },
+              "description": { "type": "string" },
+              "request": { "type": "object" },
+              "response": { "type": "object" }
+            }
+          }
+        },
+        "databaseSchema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["table", "fields"],
+            "properties": {
+              "table": { "type": "string" },
+              "fields": {
+                "type": "array",
+                "items": { "type": "string" }
+              }
+            }
+          }
+        },
+        "risks": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  },
+  "budgetMonthlyCents": 0,
+  "tags": ["c-suite", "technical-authority", "architecture"]
+}

@@ -1,0 +1,123 @@
+{
+  "$schema": "https://paperclipai.dev/schemas/agent-hire.json",
+  "name": "QA",
+  "role": "qa",
+  "title": "Quality Assurance Engineer",
+  "icon": "shield-check",
+  "reportsTo": null,
+  "reportsToRole": "engineering-manager",
+  "capabilities": "Evaluates one Developer output at a time against the original task and (optionally) a Definition of Done. Builds an independent test plan, simulates execution by tracing files[]/tests[], files concrete bugs, and decides PASS/FAIL/CONDITIONAL. Does not modify code, does not propose patches, does not execute shell commands.",
+  "adapterType": "codex_local",
+  "adapterConfig": {
+    "model": "gpt-5.5-medium",
+    "modelReasoningEffort": "medium",
+    "fallbackModel": "claude-opus-4-7-high",
+    "maxOutputTokens": 8192,
+    "temperature": 0.1,
+    "responseFormat": "json"
+  },
+  "instructionsBundle": {
+    "entryFile": "AGENTS.md",
+    "files": {
+      "AGENTS.md": "@file:./prompt.md",
+      "SKILLS.md": "@file:./SKILLS.md"
+    }
+  },
+  "runtimeConfig": {
+    "heartbeat": {
+      "enabled": false,
+      "wakeOnDemand": true
+    }
+  },
+  "inputContract": {
+    "format": "structured-task-body",
+    "sections": [
+      {
+        "marker": "=== Developer Output ===",
+        "format": "json",
+        "schemaRef": "../developer/config.json#/outputContract/schema",
+        "extract": "."
+      },
+      {
+        "marker": "=== Task ===",
+        "format": "json",
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "featureId", "description", "assignedTo", "estimatedHours", "status"],
+          "properties": {
+            "id": { "type": "string" },
+            "featureId": { "type": "string" },
+            "description": { "type": "string" },
+            "assignedTo": { "type": "string", "enum": ["developer", "designer", "qa"] },
+            "estimatedHours": { "type": "integer", "minimum": 1, "maximum": 4 },
+            "status": { "type": "string", "enum": ["pending", "in_progress", "done"] }
+          }
+        }
+      },
+      {
+        "marker": "=== Definition of Done ===",
+        "format": "json",
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["criteria"],
+          "properties": {
+            "criteria": {
+              "type": "array",
+              "items": { "type": "string" }
+            }
+          }
+        },
+        "optional": true
+      }
+    ]
+  },
+  "outputContract": {
+    "format": "json",
+    "schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["taskId", "testPlan", "results", "bugs", "decision"],
+      "properties": {
+        "taskId": { "type": "string" },
+        "testPlan": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" }
+        },
+        "results": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["test", "status", "details"],
+            "properties": {
+              "test": { "type": "string" },
+              "status": { "type": "string", "enum": ["pass", "fail"] },
+              "details": { "type": "string" }
+            }
+          }
+        },
+        "bugs": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["description", "stepsToReproduce", "expected", "actual"],
+            "properties": {
+              "description": { "type": "string" },
+              "stepsToReproduce": { "type": "string" },
+              "expected": { "type": "string" },
+              "actual": { "type": "string" }
+            }
+          }
+        },
+        "decision": { "type": "string", "enum": ["PASS", "FAIL", "CONDITIONAL"] }
+      }
+    }
+  },
+  "budgetMonthlyCents": 0,
+  "tags": ["execution", "quality-assurance", "verification"]
+}

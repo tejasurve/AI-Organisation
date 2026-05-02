@@ -1,0 +1,30 @@
+{
+  "skillsMustMention": [
+    "Engineering Manager",
+    "Developer",
+    "evaluate",
+    "simulate",
+    "test plan",
+    "bug",
+    "PASS",
+    "FAIL",
+    "CONDITIONAL",
+    "do not modify",
+    "anti-pattern",
+    "structured"
+  ],
+  "promptMustMention": [
+    "=== Developer Output ===",
+    "=== Task ===",
+    "=== Definition of Done ===",
+    "taskId",
+    "testPlan",
+    "results",
+    "bugs",
+    "decision",
+    "PASS",
+    "FAIL",
+    "CONDITIONAL",
+    "t-waitlist-storage-1"
+  ]
+}

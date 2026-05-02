@@ -1,0 +1,36 @@
+{
+  "skillsMustMention": [
+    "CTO",
+    "QA",
+    "Developer",
+    "audit",
+    "input validation",
+    "authentication",
+    "secrets",
+    "PII",
+    "dependency",
+    "prompt injection",
+    "critical",
+    "high",
+    "medium",
+    "low",
+    "GO",
+    "NO_GO",
+    "do not modify",
+    "anti-pattern"
+  ],
+  "promptMustMention": [
+    "=== QA Output ===",
+    "=== Developer Output ===",
+    "=== Changed Surfaces ===",
+    "taskId",
+    "summary",
+    "vulnerabilities",
+    "promptInjectionRisk",
+    "decision",
+    "requiredFixes",
+    "GO",
+    "NO_GO",
+    "t-waitlist-storage-1"
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "skillsMustMention": [
+    "atomic",
+    "1\u20134 hours",
+    "developer",
+    "designer",
+    "qa",
+    "feature",
+    "task",
+    "CTO",
+    "decomposition",
+    "vertical slices"
+  ],
+  "promptMustMention": [
+    "=== CTO Output ===",
+    "=== CEO Output ===",
+    "=== Company Context ===",
+    "featureId",
+    "estimatedHours",
+    "f-",
+    "t-"
+  ],
+  "outputIntegrityRules": [
+    {
+      "name": "every task.featureId references an existing feature.id",
+      "type": "foreignKey",
+      "child": "tasks",
+      "childKey": "featureId",
+      "parent": "features",
+      "parentKey": "id"
+    },
+    {
+      "name": "each feature has between 2 and 5 tasks",
+      "type": "groupCount",
+      "child": "tasks",
+      "groupBy": "featureId",
+      "parent": "features",
+      "parentKey": "id",
+      "min": 2,
+      "max": 5
+    }
+  ]
+}

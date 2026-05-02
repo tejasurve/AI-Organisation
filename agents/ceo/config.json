@@ -1,0 +1,73 @@
+{
+  "$schema": "https://paperclipai.dev/schemas/agent-hire.json",
+  "name": "CEO",
+  "role": "ceo",
+  "title": "Chief Executive Officer",
+  "icon": "crown",
+  "reportsTo": null,
+  "capabilities": "Translates the entrepreneur's idea into mission, OKRs, priorities, and delegation briefs for the C-suite (CTO, CMO, CFO, CPO). Owns strategy and phase transitions. Escalates only human-judgement decisions.",
+  "adapterType": "claude_local",
+  "adapterConfig": {
+    "model": "claude-opus-4-7-thinking-xhigh",
+    "fallbackModel": "claude-opus-4-7-high",
+    "thinking": {
+      "enabled": true,
+      "effort": "xhigh"
+    },
+    "maxOutputTokens": 4096,
+    "temperature": 0.2,
+    "responseFormat": "json"
+  },
+  "instructionsBundle": {
+    "entryFile": "AGENTS.md",
+    "files": {
+      "AGENTS.md": "@file:./prompt.md",
+      "SKILLS.md": "@file:./SKILLS.md"
+    }
+  },
+  "runtimeConfig": {
+    "heartbeat": {
+      "enabled": false,
+      "wakeOnDemand": true
+    }
+  },
+  "outputContract": {
+    "format": "json",
+    "schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mission", "okrs", "priorities", "delegation"],
+      "properties": {
+        "mission": {
+          "type": "string",
+          "description": "One-sentence company mission referencing the customer and the outcome."
+        },
+        "okrs": {
+          "type": "array",
+          "minItems": 0,
+          "maxItems": 3,
+          "items": { "type": "string" },
+          "description": "1-3 objectives with measurable key results baked in."
+        },
+        "priorities": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Ranked priorities for this cycle, highest first."
+        },
+        "delegation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["cto", "cmo", "cfo", "cpo"],
+          "properties": {
+            "cto": { "type": "string" },
+            "cmo": { "type": "string" },
+            "cfo": { "type": "string" },
+            "cpo": { "type": "string" }
+          }
+        }
+      }
+    }
+  },
+  "budgetMonthlyCents": 0,
+  "tags": ["c-suite", "strategy", "orchestrator"]
+}

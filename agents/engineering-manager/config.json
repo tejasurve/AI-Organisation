@@ -1,0 +1,106 @@
+{
+  "$schema": "https://paperclipai.dev/schemas/agent-hire.json",
+  "name": "Engineering Manager",
+  "role": "engineering-manager",
+  "title": "Engineering Manager",
+  "icon": "users",
+  "reportsTo": null,
+  "reportsToRole": "cto",
+  "capabilities": "Translates the CTO's technical plan into features and atomic tasks (1\u20134 hours, single assignee, mapped to architecture). Owns the feature\u2192task contract that executor agents (developer, designer, QA) consume. Does not execute work.",
+  "adapterType": "claude_local",
+  "adapterConfig": {
+    "model": "claude-opus-4-7-high",
+    "fallbackModel": "gpt-5.5-medium",
+    "maxOutputTokens": 8192,
+    "temperature": 0.1,
+    "responseFormat": "json"
+  },
+  "instructionsBundle": {
+    "entryFile": "AGENTS.md",
+    "files": {
+      "AGENTS.md": "@file:./prompt.md",
+      "SKILLS.md": "@file:./SKILLS.md"
+    }
+  },
+  "runtimeConfig": {
+    "heartbeat": {
+      "enabled": false,
+      "wakeOnDemand": true
+    }
+  },
+  "inputContract": {
+    "format": "structured-task-body",
+    "sections": [
+      {
+        "marker": "=== CTO Output ===",
+        "format": "json",
+        "schemaRef": "../cto/config.json#/outputContract/schema",
+        "extract": "."
+      },
+      {
+        "marker": "=== CEO Output ===",
+        "format": "json",
+        "schemaRef": "../ceo/config.json#/outputContract/schema",
+        "extract": "priorities",
+        "optional": true
+      },
+      {
+        "marker": "=== Company Context ===",
+        "format": "json",
+        "schema": {
+          "type": "object",
+          "additionalProperties": true,
+          "required": ["phase", "cycle"],
+          "properties": {
+            "phase": { "type": "string" },
+            "cycle": { "type": "number" },
+            "priorCycle": {}
+          }
+        }
+      }
+    ]
+  },
+  "outputContract": {
+    "format": "json",
+    "schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["features", "tasks"],
+      "properties": {
+        "features": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "name", "description", "priority", "status"],
+            "properties": {
+              "id": { "type": "string" },
+              "name": { "type": "string" },
+              "description": { "type": "string" },
+              "priority": { "type": "string", "enum": ["high", "medium", "low"] },
+              "status": { "type": "string", "enum": ["pending"] }
+            }
+          }
+        },
+        "tasks": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["id", "featureId", "description", "assignedTo", "estimatedHours", "status"],
+            "properties": {
+              "id": { "type": "string" },
+              "featureId": { "type": "string" },
+              "description": { "type": "string" },
+              "assignedTo": { "type": "string", "enum": ["developer", "designer", "qa"] },
+              "estimatedHours": { "type": "integer", "minimum": 1, "maximum": 4 },
+              "status": { "type": "string", "enum": ["pending"] }
+            }
+          }
+        }
+      }
+    }
+  },
+  "budgetMonthlyCents": 0,
+  "tags": ["management", "delivery", "task-decomposition"]
+}

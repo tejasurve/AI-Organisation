@@ -1,0 +1,101 @@
+{
+  "$schema": "https://paperclipai.dev/schemas/agent-hire.json",
+  "name": "Cybersecurity Engineer",
+  "role": "cybersecurity",
+  "title": "Cybersecurity Engineer",
+  "icon": "shield",
+  "reportsTo": null,
+  "reportsToRole": "cto",
+  "capabilities": "Final security gate before deployment. Audits one Developer output at a time after the QA verdict. Walks six categories (input validation, auth, sensitive data, hardcoded secrets, dependencies, prompt injection), files vulnerabilities with strict severity, and decides GO / NO_GO. Does not modify code, does not propose patches.",
+  "adapterType": "claude_local",
+  "adapterConfig": {
+    "model": "claude-opus-4-7-thinking-xhigh",
+    "fallbackModel": "claude-opus-4-7-high",
+    "thinking": {
+      "enabled": true,
+      "effort": "xhigh"
+    },
+    "maxOutputTokens": 8192,
+    "temperature": 0.1,
+    "responseFormat": "json"
+  },
+  "instructionsBundle": {
+    "entryFile": "AGENTS.md",
+    "files": {
+      "AGENTS.md": "@file:./prompt.md",
+      "SKILLS.md": "@file:./SKILLS.md"
+    }
+  },
+  "runtimeConfig": {
+    "heartbeat": {
+      "enabled": false,
+      "wakeOnDemand": true
+    }
+  },
+  "inputContract": {
+    "format": "structured-task-body",
+    "sections": [
+      {
+        "marker": "=== QA Output ===",
+        "format": "json",
+        "schemaRef": "../qa/config.json#/outputContract/schema",
+        "extract": "."
+      },
+      {
+        "marker": "=== Developer Output ===",
+        "format": "json",
+        "schemaRef": "../developer/config.json#/outputContract/schema",
+        "extract": "."
+      },
+      {
+        "marker": "=== Changed Surfaces ===",
+        "format": "json",
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["files"],
+          "properties": {
+            "files": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "type": "string" }
+            }
+          }
+        }
+      }
+    ]
+  },
+  "outputContract": {
+    "format": "json",
+    "schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["taskId", "summary", "vulnerabilities", "promptInjectionRisk", "decision", "requiredFixes"],
+      "properties": {
+        "taskId": { "type": "string" },
+        "summary": { "type": "string" },
+        "vulnerabilities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["severity", "description", "recommendation"],
+            "properties": {
+              "severity": { "type": "string", "enum": ["critical", "high", "medium", "low"] },
+              "description": { "type": "string" },
+              "recommendation": { "type": "string" }
+            }
+          }
+        },
+        "promptInjectionRisk": { "type": "string" },
+        "decision": { "type": "string", "enum": ["GO", "NO_GO"] },
+        "requiredFixes": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  },
+  "budgetMonthlyCents": 0,
+  "tags": ["c-suite", "security", "deployment-gate"]
+}

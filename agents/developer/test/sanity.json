@@ -1,0 +1,28 @@
+{
+  "skillsMustMention": [
+    "Engineering Manager",
+    "task",
+    "Next.js",
+    "TypeScript",
+    "Drizzle",
+    "vitest",
+    "complete",
+    "runnable",
+    "test",
+    "TODO",
+    "anti-pattern",
+    "implementation"
+  ],
+  "promptMustMention": [
+    "=== Task ===",
+    "=== Feature ===",
+    "=== CTO Output ===",
+    "=== Company Context ===",
+    "taskId",
+    "implementationPlan",
+    "files",
+    "tests",
+    "notes",
+    "t-waitlist-storage-1"
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "skillsMustMention": [
+    "architecture",
+    "API",
+    "database",
+    "schema",
+    "Next.js",
+    "Postgres",
+    "risk",
+    "CEO",
+    "delegation.cto"
+  ],
+  "promptMustMention": [
+    "delegation.cto",
+    "=== CEO Output ===",
+    "=== Company Context ===",
+    "minimum-valid"
+  ]
+}

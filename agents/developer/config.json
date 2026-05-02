@@ -1,0 +1,133 @@
+{
+  "$schema": "https://paperclipai.dev/schemas/agent-hire.json",
+  "name": "Developer",
+  "role": "developer",
+  "title": "Software Engineer",
+  "icon": "terminal",
+  "reportsTo": null,
+  "reportsToRole": "engineering-manager",
+  "capabilities": "Implements one Engineering Manager task at a time as complete, runnable code (Next.js / Node.js + TypeScript per CTO architecture) with co-located tests. Strictly follows CTO architecture, API contracts, and database schema. Does not redesign, does not bundle tasks, does not deploy.",
+  "adapterType": "claude_local",
+  "adapterConfig": {
+    "model": "claude-opus-4-6",
+    "fallbackModel": "claude-opus-4-7-high",
+    "maxOutputTokens": 8192,
+    "temperature": 0.1,
+    "responseFormat": "json"
+  },
+  "instructionsBundle": {
+    "entryFile": "AGENTS.md",
+    "files": {
+      "AGENTS.md": "@file:./prompt.md",
+      "SKILLS.md": "@file:./SKILLS.md"
+    }
+  },
+  "runtimeConfig": {
+    "heartbeat": {
+      "enabled": false,
+      "wakeOnDemand": true
+    }
+  },
+  "inputContract": {
+    "format": "structured-task-body",
+    "sections": [
+      {
+        "marker": "=== Task ===",
+        "format": "json",
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "featureId", "description", "assignedTo", "estimatedHours", "status"],
+          "properties": {
+            "id": { "type": "string" },
+            "featureId": { "type": "string" },
+            "description": { "type": "string" },
+            "assignedTo": { "type": "string", "enum": ["developer", "designer", "qa"] },
+            "estimatedHours": { "type": "integer", "minimum": 1, "maximum": 4 },
+            "status": { "type": "string", "enum": ["pending", "in_progress", "done"] }
+          }
+        }
+      },
+      {
+        "marker": "=== Feature ===",
+        "format": "json",
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "name", "description", "priority", "status"],
+          "properties": {
+            "id": { "type": "string" },
+            "name": { "type": "string" },
+            "description": { "type": "string" },
+            "priority": { "type": "string", "enum": ["high", "medium", "low"] },
+            "status": { "type": "string", "enum": ["pending", "in_progress", "done"] }
+          }
+        }
+      },
+      {
+        "marker": "=== CTO Output ===",
+        "format": "json",
+        "schemaRef": "../cto/config.json#/outputContract/schema",
+        "extract": "."
+      },
+      {
+        "marker": "=== Company Context ===",
+        "format": "json",
+        "schema": {
+          "type": "object",
+          "additionalProperties": true,
+          "required": ["phase", "cycle"],
+          "properties": {
+            "phase": { "type": "string" },
+            "cycle": { "type": "number" },
+            "priorCycle": {}
+          }
+        }
+      }
+    ]
+  },
+  "outputContract": {
+    "format": "json",
+    "schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["taskId", "implementationPlan", "files", "tests", "notes"],
+      "properties": {
+        "taskId": { "type": "string" },
+        "implementationPlan": { "type": "string" },
+        "files": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "content"],
+            "properties": {
+              "path": { "type": "string" },
+              "content": { "type": "string" }
+            }
+          }
+        },
+        "tests": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["description", "code"],
+            "properties": {
+              "description": { "type": "string" },
+              "code": { "type": "string" }
+            }
+          }
+        },
+        "notes": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  },
+  "budgetMonthlyCents": 0,
+  "tags": ["execution", "code-generation", "implementation"]
+}
