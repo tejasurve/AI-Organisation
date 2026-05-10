@@ -1,0 +1,69 @@
+{
+  "taskId": "t-orders-2",
+  "testPlan": [
+    "Verify the file set lands the Orders tab as a single page file: app/dashboard/orders/page.tsx.",
+    "Verify the page is a server component that resolves the retailer via getSession + redirects to / on miss.",
+    "Verify searchParams.status defaults to 'active' when missing, and is coerced to 'closed' only when literally 'closed' (any other string falls back to 'active').",
+    "Verify the page reads listOrders(retailerId, group) directly from the in-memory store.",
+    "Verify the segmented tablist renders 2 anchor links (Active, Closed) with role='tab' and aria-selected reflecting the current group.",
+    "Verify each order card shows distributor name, short order id, status pill, items / total / placed-relative dl, and the expected-delivery line only when set.",
+    "Verify status pill colours map every OrderStatus to a non-empty Tailwind class (placed/acknowledged/out_for_delivery/delivered/cancelled).",
+    "Verify the Active and Closed empty-states render distinct copy.",
+    "Verify dynamic = 'force-dynamic' is exported.",
+    "Search files[].content for forbidden placeholder strings."
+  ],
+  "results": [
+    {
+      "test": "Single page file lands the Orders tab.",
+      "status": "pass",
+      "details": "1 file: app/dashboard/orders/page.tsx (~5 KB). Tab content + helpers + status colour map all in one module - small enough to navigate."
+    },
+    {
+      "test": "Server component with session guard.",
+      "status": "pass",
+      "details": "No 'use client'. getSession() -> redirect('/') on null. Defence in depth on top of the dashboard layout's own guard."
+    },
+    {
+      "test": "?status defaulting and validation.",
+      "status": "pass",
+      "details": "group: OrderStatusGroup = searchParams.status === 'closed' ? 'closed' : 'active'. Strict equality means ?status=Closed (capital C), ?status=foo, ?status= all fall back to 'active'. Belt-and-braces with the 400 validation on the API endpoint."
+    },
+    {
+      "test": "Direct store read.",
+      "status": "pass",
+      "details": "listOrders(session.retailerId, group). Same in-process pattern as the home page; no internal HTTP hop."
+    },
+    {
+      "test": "Segmented tablist accessibility.",
+      "status": "pass",
+      "details": "<nav role='tablist'>. <TabLink> renders <Link role='tab' aria-selected={active}>. Active class set: bg-white text-brand-700 shadow. Inactive: text-slate-600. URL-based - the back button works as expected."
+    },
+    {
+      "test": "Order card layout.",
+      "status": "pass",
+      "details": "Header: distributor name (truncated for long names) + 'Order #<short id>' (first 8 chars). Status pill on the right. dl with 3 columns (Items, Total, Placed). Expected delivery line only renders if order.expectedDelivery is truthy."
+    },
+    {
+      "test": "StatusPill colour map covers every OrderStatus.",
+      "status": "pass",
+      "details": "styles: Record<OrderStatus, string> exhausts the union: placed=blue, acknowledged=indigo, out_for_delivery=amber, delivered=emerald, cancelled=slate. TypeScript Record<OrderStatus, ...> would refuse to compile if any status were missing - compile-time guarantee."
+    },
+    {
+      "test": "Distinct empty-state copy per tab.",
+      "status": "pass",
+      "details": "Active: 'No active orders right now. Place one from the Cart tab.' (CTA towards the next obvious user action). Closed: 'No closed orders yet. Delivered and cancelled orders will show up here.' (sets expectation)."
+    },
+    {
+      "test": "Force-dynamic exported.",
+      "status": "pass",
+      "details": "`export const dynamic = 'force-dynamic'` declared after imports. Required because getSession() reads cookies()."
+    },
+    {
+      "test": "No forbidden placeholder strings.",
+      "status": "pass",
+      "details": "Scanned the single file. Zero matches."
+    }
+  ],
+  "bugs": [],
+  "decision": "PASS"
+}

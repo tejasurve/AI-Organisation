@@ -1,0 +1,63 @@
+{
+  "taskId": "t-profile-1",
+  "testPlan": [
+    "Verify the file set lands the API + page + logout component: app/api/profile/route.ts, app/dashboard/profile/page.tsx, components/LogoutButton.tsx.",
+    "Verify GET /api/profile returns 401 without cookie, 404 if retailer is gone, and the documented payload shape on success (retailer + outstanding with totalPaise + perDistributor).",
+    "Verify totalPaise equals sum(perDistributor[].amountPaise) - single source of truth, no drift.",
+    "Verify the profile page is a server component that resolves the retailer via getSession and reads the same data directly from the store.",
+    "Verify the retailer card includes initials avatar, store name, owner name, active pill, and a dl with License / GSTIN / Store address / Phone / Email / Favourites.",
+    "Verify the outstanding section mirrors the Home tile (amber palette, total + per-distributor breakdown, empty-state copy) and surfaces the 'Last reconciled' caveat.",
+    "Verify <LogoutButton /> is a client component that POSTs to /api/auth/logout and routes to / on success.",
+    "Verify dynamic = 'force-dynamic' on the API.",
+    "Search files[].content for forbidden placeholder strings."
+  ],
+  "results": [
+    {
+      "test": "File set covers API + page + logout component.",
+      "status": "pass",
+      "details": "3 files: app/api/profile/route.ts, app/dashboard/profile/page.tsx, components/LogoutButton.tsx. ~5 KB total."
+    },
+    {
+      "test": "GET /api/profile branches.",
+      "status": "pass",
+      "details": "(1) no session -> 401 'unauthenticated'. (2) retailer not found -> 404 'retailer not found' (defence in depth, in-memory invariant says this never happens). (3) success -> 200 with the documented payload."
+    },
+    {
+      "test": "totalPaise == sum(perDistributor[].amountPaise).",
+      "status": "pass",
+      "details": "totalPaise = op.reduce((acc, p) => acc + p.amountDuePaise, 0). perDistributor maps the same op array. Co-located vitest verifies the equality in the response."
+    },
+    {
+      "test": "Profile page is a server component reading the store directly.",
+      "status": "pass",
+      "details": "No 'use client'. getSession + getRetailer + getOutstandingForRetailer + getDistributor calls. Redirects to / on either session or retailer miss."
+    },
+    {
+      "test": "Retailer card layout.",
+      "status": "pass",
+      "details": "Top section: initials avatar (first letter of first 2 ownerName parts), store name + owner + emerald 'Active retailer' pill. dl below: License number, GSTIN, Store address, Phone, Email, Favourites - 6 rows, divided, label/value pattern."
+    },
+    {
+      "test": "Outstanding section mirrors Home tile.",
+      "status": "pass",
+      "details": "Same amber palette (border-amber-200, bg-amber-50, text-amber-900). Header label + total on the right, per-distributor list, empty-state ('No outstanding balance.'), 'Last reconciled' caveat at the bottom."
+    },
+    {
+      "test": "LogoutButton client component.",
+      "status": "pass",
+      "details": "'use client' on line 1. fetch('/api/auth/logout', { method: 'POST' }). On 2xx -> router.replace('/'). On non-2xx -> setError. Disabled while pending. Surfaces inline error if the POST fails."
+    },
+    {
+      "test": "Force-dynamic on the API.",
+      "status": "pass",
+      "details": "`export const dynamic = 'force-dynamic'` declared in app/api/profile/route.ts. Required because GET reads cookies()."
+    },
+    {
+      "test": "No forbidden placeholder strings.",
+      "status": "pass",
+      "details": "Scanned all 3 files. Zero matches."
+    }
+  ],
+  "bugs": [],
+  "decision": "PASS"
+}

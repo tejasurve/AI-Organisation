@@ -1,0 +1,51 @@
+{
+  "taskId": "t-signup-storage-1",
+  "testPlan": [
+    "Verify the file set follows the architecture: schema lives at lib/db/schema/signups.ts and is re-exported from lib/db/schema/index.ts.",
+    "Verify every field from the task description appears in lib/db/schema/signups.ts with the correct type, nullability, and default.",
+    "Verify the unique constraint covers exactly (email) and is named per Drizzle convention.",
+    "Walk every it-block in the vitest file and confirm each assertion targets observable schema shape, not implementation detail.",
+    "Search files[].content for forbidden placeholder strings (TODO, FIXME, XXX, 'not implemented').",
+    "Verify the developer notes accurately surface assumptions and deferred concerns (drizzle-kit migration strategy, deferred rate-limit risk, source default rationale).",
+    "Verify the migration generation strategy is consistent with the CTO architecture (drizzle-kit generate, not hand-written SQL)."
+  ],
+  "results": [
+    {
+      "test": "File set follows the architecture: schema + barrel re-export under lib/db/schema/.",
+      "status": "pass",
+      "details": "files[0].path = lib/db/schema/signups.ts, files[1].path = lib/db/schema/index.ts. Both repo-relative, forward-slashed, no extras."
+    },
+    {
+      "test": "Every field from the task description appears with the correct shape.",
+      "status": "pass",
+      "details": "Traced lib/db/schema/signups.ts line by line: id is uuid().primaryKey().default(sql`gen_random_uuid()`), email is text().notNull(), source is text().notNull().default(\"landing-v1\"), created_at is timestamp({ withTimezone: true }).notNull().defaultNow(). 4/4 fields verified against the inlined CTO spec."
+    },
+    {
+      "test": "Unique constraint on (email) declared and named per Drizzle convention.",
+      "status": "pass",
+      "details": "uniqueEmail = unique(\"signups_email_unique\").on(table.email). Constraint columns and name both match the field list and the CTO contract's idempotency requirement on email."
+    },
+    {
+      "test": "Vitest assertions target observable schema shape, not implementation detail.",
+      "status": "pass",
+      "details": "4 it-blocks all read getTableConfig(signups) and assert against config.name, config.columns[].name, config.columns[].default, and config.uniqueConstraints[].name/columns — all declarative metadata."
+    },
+    {
+      "test": "No forbidden placeholder strings in files[].content.",
+      "status": "pass",
+      "details": "Scanned both file contents for TODO, FIXME, XXX, 'not implemented'. Zero matches across 700+ characters of source."
+    },
+    {
+      "test": "Developer notes accurately surface assumptions and deferred concerns.",
+      "status": "pass",
+      "details": "Note 1 (drizzle-kit migration): consistent with no migration file being included and the chosen ORM. Note 2 (deferred rate-limit): matches the CTO risks list; correctly NOT operationalised because this task is schema-only. Note 3 (source default rationale): matches the CTO contract for 'source: string (optional, default \\'landing-v1\\')'."
+    },
+    {
+      "test": "Migration generation strategy is consistent with the CTO architecture.",
+      "status": "pass",
+      "details": "Developer correctly did not hand-write SQL. drizzle-kit generate is the canonical Drizzle workflow and is delegated to the build pipeline, as noted. No conflict with the architecture."
+    }
+  ],
+  "bugs": [],
+  "decision": "PASS"
+}

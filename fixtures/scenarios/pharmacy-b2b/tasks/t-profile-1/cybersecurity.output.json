@@ -1,0 +1,14 @@
+{
+  "taskId": "t-profile-1",
+  "summary": "Audited the profile API + page + logout client component. The change reads typed retailer + outstanding data via the session, returns a JSON projection, and exposes a logout button that POSTs to the t-shell-2 logout endpoint. No critical or high-severity vulnerabilities were found. One medium-severity item (the API leaks PII for the entire retailer record - phone, email, GSTIN, address - and there is no field-level filtering for the eventual multi-user-per-retailer scenario) is recorded for cycle-2 access-control work.",
+  "vulnerabilities": [
+    {
+      "severity": "medium",
+      "description": "GET /api/profile returns the retailer's full PII surface (name, ownerName, licenseNumber, storeAddress, phone, email, GSTIN). For the single-retailer-per-device pilot this is fine - the session cookie is a 1:1 retailer binding. The medium rating flags the cycle-2 risk: when multiple staff share a retailer (cashier vs owner roles), the cashier should not see the GSTIN / owner phone. The API as written has no role check.",
+      "recommendation": "Cycle 2: add a roles field to the Retailer (or to a new RetailerUser table) and gate fields in the response based on role. Owner sees everything; cashier sees only storeName / storeAddress / favouritesCount / outstanding."
+    }
+  ],
+  "promptInjectionRisk": "None. The handler issues no LLM call, performs no LLM-mediated I/O, renders no untrusted text as raw HTML (the page uses React text-content interpolation only), and executes no shell or filesystem operations. All response data flows from typed in-memory rows through NextResponse.json's automatic escaping.",
+  "decision": "GO",
+  "requiredFixes": []
+}

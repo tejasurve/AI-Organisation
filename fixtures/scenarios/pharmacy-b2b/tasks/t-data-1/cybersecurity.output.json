@@ -1,0 +1,24 @@
+{
+  "taskId": "t-data-1",
+  "summary": "Audited the in-memory data spine: shared TypeScript types and the Map-backed store with seed data. The change introduces no network I/O, no external SDK calls, no LLM-mediated flow, no shell or filesystem access, and no public surface (every consumer is a Route Handler that gates access via the session middleware from t-shell-2). No critical or high-severity vulnerabilities were found. Two medium-severity items (PII at rest in the seeded retailer row, hardcoded GSTIN in source) and one low-severity item (no rate-limit on searchMedicines linear scan) are documented for the cycle-2 backlog. Nothing here blocks proceed.",
+  "vulnerabilities": [
+    {
+      "severity": "medium",
+      "description": "lib/db/store.ts ships seed data containing what looks like a real retailer's PII (name, owner, license number, store address, phone, email, GSTIN) hardcoded into the source file. If this file is ever committed to a public repository or surfaces in build artefacts (Next.js bundles server modules into .next/server/), the pilot retailer's contact details are exfiltrated.",
+      "recommendation": "Treat the pilot retailer block as fixture-only for the demo and replace with placeholder data (e.g. 'Demo Pharmacy', '+91 00000 00000', 'demo@example.com', license 'DEMO-0001') before any public push or production build. For the actual pilot, move the retailer row to environment-loaded JSON (PHARMACY_PILOT_JSON_PATH) and load lazily on first request."
+    },
+    {
+      "severity": "medium",
+      "description": "Money handling uses plain JS numbers for paise. JS Number is a double; integer math is exact only up to 2^53 - 1 paise (~Rs.90 trillion), which is safe for this app, but multiplication / addition without explicit overflow guards in createOrdersFromCart could silently lose precision once a single line item crosses ~Rs.18,014,398,509,481.98 (extreme but worth surfacing for a payments-adjacent surface).",
+      "recommendation": "Add a defensive Number.isSafeInteger(...) assertion inside createOrdersFromCart for both qty * unitPricePaise and the running totalPaise sum, throwing a hard error with the offending row id if the invariant breaks. Cycle 2 hardening: migrate paise math to bigint when Postgres + Drizzle land."
+    },
+    {
+      "severity": "low",
+      "description": "searchMedicines does a linear scan over Array.from(medicines.values()) on every call with toLowerCase() on three fields per row. With 20 medicines this is ~60 tolower calls per query (microseconds) and is totally fine for the pilot, but scales linearly. A retailer who scripts the search endpoint can drive ~1000 QPS without effort because there is no rate limit on the API.",
+      "recommendation": "Cycle 2 hardening: add the same upstash/ratelimit envelope recommended for the login endpoint (e.g. 60 RPS per session), and migrate searchMedicines to a Postgres trigram index when the catalogue crosses ~1000 SKUs. Both changes are out of scope for cycle 1."
+    }
+  ],
+  "promptInjectionRisk": "None. The data spine ships no LLM-mediated I/O. Every public function takes typed parameters (string ids, integer qty, plain string queries) and returns typed Records. No string is ever interpolated into a model prompt, rendered as raw HTML, passed to a shell, or written to disk. Search input flows only into JS .toLowerCase() + .includes() checks against in-memory rows; there is no path through which untrusted text reaches a model surface.",
+  "decision": "GO",
+  "requiredFixes": []
+}

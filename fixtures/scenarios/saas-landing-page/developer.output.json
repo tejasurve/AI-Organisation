@@ -1,0 +1,25 @@
+{
+  "taskId": "t-signup-storage-1",
+  "implementationPlan": "Implement the signups Drizzle schema in lib/db/schema/signups.ts mirroring the CTO databaseSchema entry exactly: uuid primary key with gen_random_uuid() default, email and source text columns (source defaulting to 'landing-v1'), created_at timestamptz with defaultNow(), and a uniqueness constraint on email named per Drizzle convention. Re-export the new table and its types from the lib/db/schema barrel so the upcoming POST /api/signup handler can import it cleanly. Ship a co-located vitest file that asserts the table name, column set, source default, and uniqueness constraint shape match the CTO spec.",
+  "files": [
+    {
+      "path": "lib/db/schema/signups.ts",
+      "content": "import { pgTable, text, timestamp, unique, uuid } from \"drizzle-orm/pg-core\";\nimport { sql } from \"drizzle-orm\";\n\nexport const signups = pgTable(\n  \"signups\",\n  {\n    id: uuid(\"id\")\n      .primaryKey()\n      .default(sql`gen_random_uuid()`),\n    email: text(\"email\").notNull(),\n    source: text(\"source\").notNull().default(\"landing-v1\"),\n    createdAt: timestamp(\"created_at\", { withTimezone: true })\n      .notNull()\n      .defaultNow(),\n  },\n  (table) => ({\n    uniqueEmail: unique(\"signups_email_unique\").on(table.email),\n  }),\n);\n\nexport type Signup = typeof signups.$inferSelect;\nexport type NewSignup = typeof signups.$inferInsert;\n"
+    },
+    {
+      "path": "lib/db/schema/index.ts",
+      "content": "export {\n  signups,\n  type Signup,\n  type NewSignup,\n} from \"./signups.ts\";\n"
+    }
+  ],
+  "tests": [
+    {
+      "description": "signups declares the table name, columns, source default, and uniqueness constraint required by the CTO databaseSchema",
+      "code": "import { describe, expect, it } from \"vitest\";\nimport { getTableConfig } from \"drizzle-orm/pg-core\";\n\nimport { signups } from \"./signups.ts\";\n\ndescribe(\"signups schema\", () => {\n  const config = getTableConfig(signups);\n\n  it(\"is named signups per the CTO spec\", () => {\n    expect(config.name).toBe(\"signups\");\n  });\n\n  it(\"exposes id, email, source, created_at columns\", () => {\n    const names = config.columns.map((c) => c.name).sort();\n    expect(names).toEqual([\n      \"created_at\",\n      \"email\",\n      \"id\",\n      \"source\",\n    ]);\n  });\n\n  it(\"defaults source to 'landing-v1'\", () => {\n    const source = config.columns.find((c) => c.name === \"source\");\n    expect(source?.default).toBe(\"landing-v1\");\n  });\n\n  it(\"declares a unique constraint on (email)\", () => {\n    const u = config.uniqueConstraints.find(\n      (x) => x.name === \"signups_email_unique\",\n    );\n    expect(u).toBeDefined();\n    expect(u!.columns.map((c) => c.name)).toEqual([\"email\"]);\n  });\n});\n"
+    }
+  ],
+  "notes": [
+    "No SQL migration file was hand-written. Run `drizzle-kit generate` against this schema to produce the migration; that step belongs to the build pipeline, not the developer agent.",
+    "No rate-limit added: the CTO listed it as a deferred risk on /api/signup, and this task is schema-only.",
+    "Source defaults to 'landing-v1' per the CTO contract so a missing source field on the API request still produces a meaningful row."
+  ]
+}

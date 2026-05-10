@@ -1,0 +1,75 @@
+{
+  "taskId": "t-home-2",
+  "testPlan": [
+    "Verify the file set lands the Home tab + search destination + the two reusable client components: app/dashboard/home/page.tsx, app/dashboard/search/page.tsx, components/SearchBar.tsx, components/MedicineRow.tsx.",
+    "Verify app/dashboard/home/page.tsx is a server component (no 'use client') that resolves the retailer via getSession + getRetailer, redirects to / on either miss, and reads listOffers + getOutstandingForRetailer directly from the in-memory store.",
+    "Verify the home page renders the 4 documented sections: greeting (retailer first name + store name), search bar, offers carousel, quick-links grid, outstanding-payments tile.",
+    "Verify the offers carousel uses snap-x snap-mandatory horizontal scrolling with min-w cards (mobile-first horizontal scroll).",
+    "Verify the 5 quick-link tiles have the documented labels: Distributors, Schemes, Generic medicines, Scan prescription, Outstanding payments. The Outstanding payments tile links to /dashboard/profile.",
+    "Verify the outstanding-payments amber tile sums per-distributor balances, formats with paiseToRupees, lists each distributor row, and shows an empty-state when there is no balance.",
+    "Verify components/SearchBar.tsx is a client component, accepts an optional initialQuery prop, and on submit routes to /dashboard/search?q=<encoded>.",
+    "Verify components/MedicineRow.tsx is a client component that POSTs to /api/cart/items on the Add to cart button and surfaces an inline error when the response is non-200, plus an optimistic 'Added' label that auto-resets.",
+    "Verify the discount % is rendered only when MRP > selling price (no negative or zero discount displayed).",
+    "Verify app/dashboard/search/page.tsx is a server component that reads ?q from searchParams, calls searchMedicines + getDistributor directly, and renders an empty-state when zero results.",
+    "Search files[].content for forbidden placeholder strings."
+  ],
+  "results": [
+    {
+      "test": "File set covers the Home tab + search destination + reusable components.",
+      "status": "pass",
+      "details": "4 files: app/dashboard/home/page.tsx, app/dashboard/search/page.tsx, components/SearchBar.tsx, components/MedicineRow.tsx. Total ~7 KB of source."
+    },
+    {
+      "test": "Home page is a server component with the documented session guard.",
+      "status": "pass",
+      "details": "No 'use client' directive on app/dashboard/home/page.tsx. getSession() returns Session | null; null -> redirect('/'). getRetailer(session.retailerId) returns Retailer | undefined; undefined -> redirect('/'). Defence in depth on top of the dashboard layout's own guard."
+    },
+    {
+      "test": "All 4 sections present on the home page.",
+      "status": "pass",
+      "details": "Section 1 (greeting): 'Welcome back,' + first name + store name. Section 2 (search bar): <SearchBar /> render. Section 3 (offers carousel): aria-labelledby=offers-heading + ul.flex.snap-x.snap-mandatory + li with min-w-[280px]. Section 4 (quick links): aria-labelledby=quick-links-heading + grid grid-cols-2 + 5 entries. Section 5 (outstanding): aria-labelledby=outstanding-heading + amber tile + per-distributor list."
+    },
+    {
+      "test": "Carousel uses snap-x snap-mandatory and min-width cards.",
+      "status": "pass",
+      "details": "ul classNames: 'flex snap-x snap-mandatory gap-3'. Each li has 'snap-start ... min-w-[280px] max-w-[280px]'. Outer wrapper has overflow-x-auto with -mx-4 px-4 to bleed off the page edge. Mobile-first behaviour confirmed."
+    },
+    {
+      "test": "5 quick-link tiles present with correct labels and the Outstanding-payments href.",
+      "status": "pass",
+      "details": "QUICK_LINKS array: Distributors -> /dashboard/distributors, Schemes -> /dashboard/schemes, Generic medicines -> /dashboard/generics, Scan prescription -> /dashboard/scan, Outstanding payments -> /dashboard/profile. The Outstanding-payments tile correctly routes to the Profile tab where the breakdown lives."
+    },
+    {
+      "test": "Outstanding tile sums per-distributor balance and shows empty-state.",
+      "status": "pass",
+      "details": "outstandingTotal = outstanding.reduce((acc, p) => acc + p.amountDuePaise, 0); rendered as paiseToRupees(outstandingTotal) in a 3xl bold heading. Per-distributor list maps each row to a flex justify-between row with the distributor name + paiseToRupees(amount). Empty-state: 'No outstanding balance.' li when outstanding.length === 0."
+    },
+    {
+      "test": "SearchBar is a client component, supports initialQuery, routes to /dashboard/search.",
+      "status": "pass",
+      "details": "'use client' on line 1. initialQuery prop with default ''. onSubmit calls router.push(term ? `/dashboard/search?q=${encodeURIComponent(term)}` : '/dashboard/search'). Empty trimmed term sends to the no-q variant so the search page can render the full catalogue."
+    },
+    {
+      "test": "MedicineRow client component: POSTs to /api/cart/items, optimistic Added, error surfacing.",
+      "status": "pass",
+      "details": "'use client' on line 1. fetch('/api/cart/items', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ medicineId, qty: 1 }) }). Non-2xx -> setError(body.error ?? `Add to cart failed (${res.status})`). 2xx -> setAdded(true) + setTimeout(() => setAdded(false), 1500). Button disables during pending OR added so double-tap is impossible."
+    },
+    {
+      "test": "Discount % only renders when MRP > selling price.",
+      "status": "pass",
+      "details": "discountPct = props.mrpPaise > props.sellingPricePaise ? Math.round(((mrp - sell) / mrp) * 100) : 0. Render guard: discountPct > 0 ? <p>...</p> : null. No negative discount display, no '0% off' label."
+    },
+    {
+      "test": "Search page reads ?q, calls searchMedicines + getDistributor, has empty-state.",
+      "status": "pass",
+      "details": "searchParams: { q?: string }. q = (searchParams.q ?? '').trim(). searchMedicines(q).slice(0, 50). MedicineRow per result with distributorName resolved via getDistributor. Empty-state: 'No medicines matched ...' inside a dashed border when meds.length === 0. Result count line: 'Showing N medicines (capped)' if 50."
+    },
+    {
+      "test": "No forbidden placeholder strings.",
+      "status": "pass",
+      "details": "Scanned all 4 files for TODO, FIXME, XXX, 'not implemented'. Zero matches."
+    }
+  ],
+  "bugs": [],
+  "decision": "PASS"
+}

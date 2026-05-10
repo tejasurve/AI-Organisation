@@ -1,0 +1,69 @@
+{
+  "taskId": "t-cart-2",
+  "testPlan": [
+    "Verify the file set lands the Cart tab + the cart-state client component: app/dashboard/cart/page.tsx, components/CartView.tsx.",
+    "Verify the page is a server component that reads the cart via buildCartResponse and passes it to the client component as initial state.",
+    "Verify the page header summarises the cart (item count + group count) with correct singular/plural copy.",
+    "Verify <CartView /> renders the empty-state with the 'Browse medicines' CTA when itemCount is 0.",
+    "Verify <CartView /> renders distributor groups with per-group subtotal, per-line qty x unit-price + line total, and a Remove button per item.",
+    "Verify the sticky footer (grand total + Place order pill) is positioned above the bottom tab bar (bottom-16) and labels the button with the current item count.",
+    "Verify Remove calls DELETE /api/cart/items/[medicineId] and replaces local state with the response payload (single source of truth).",
+    "Verify Place order calls POST /api/orders, on success router.push('/dashboard/orders?status=active') + router.refresh() so the destination re-reads from the server.",
+    "Verify error states surface the server's error JSON inline (no alerts, no toast dependency).",
+    "Search files[].content for forbidden placeholder strings."
+  ],
+  "results": [
+    {
+      "test": "File set covers cart page + cart view.",
+      "status": "pass",
+      "details": "2 files: app/dashboard/cart/page.tsx, components/CartView.tsx. Total ~6 KB."
+    },
+    {
+      "test": "Page is a server component that hydrates initial cart from the store.",
+      "status": "pass",
+      "details": "No 'use client'. getSession() -> redirect('/') on miss. cart = buildCartResponse(session.retailerId) (in-process). <CartView initialCart={cart} />."
+    },
+    {
+      "test": "Header copy adapts to itemCount and groups.length.",
+      "status": "pass",
+      "details": "0 items -> 'Nothing in your cart yet.'. 1 item / 1 group -> '1 item across 1 distributor.'. Otherwise plural. Pluralisation hardcoded (no i18n dep)."
+    },
+    {
+      "test": "Empty-state with Browse medicines CTA.",
+      "status": "pass",
+      "details": "When cart.itemCount === 0, returns a dashed-border card with 'Your cart is empty', supporting paragraph, and a brand-coloured Link to /dashboard/home labelled 'Browse medicines'. Co-located vitest verifies the strings + the href."
+    },
+    {
+      "test": "Distributor groups + per-line layout.",
+      "status": "pass",
+      "details": "Each <section> has aria-labelledby pointing at the distributor heading. Header row shows distributor name + subtotalPaise (formatted). Items rendered in a divide-y ul with name, brand, qty x unitPrice line, line total, and a Remove button (aria-label includes the medicine name for screen readers)."
+    },
+    {
+      "test": "Sticky footer position + Place order label.",
+      "status": "pass",
+      "details": "fixed bottom-16 (above the bottom tab bar). Label: 'Place order ({cart.itemCount})' or 'Placing...' while pending. Disabled when isPlacing OR itemCount === 0."
+    },
+    {
+      "test": "Remove uses DELETE + replaces state with the response.",
+      "status": "pass",
+      "details": "fetch(`/api/cart/items/${encodeURIComponent(medicineId)}`, { method: 'DELETE' }). On 2xx: setCart((await res.json()) as CartState). On non-2xx: setError. encodeURIComponent guards against any future medicine ids that contain reserved URL chars."
+    },
+    {
+      "test": "Place order routes + refreshes destination.",
+      "status": "pass",
+      "details": "fetch('/api/orders', { method: 'POST' }). On 2xx: router.push('/dashboard/orders?status=active') then router.refresh(). The refresh forces the destination's server component (Orders tab from t-orders-2) to re-execute, so the new orders show up immediately without an F5."
+    },
+    {
+      "test": "Inline error surfacing.",
+      "status": "pass",
+      "details": "Single error state at the top of the cart view in a red-bordered alert box (role='alert' for screen readers). No toast library, no modal - keeps deps minimal."
+    },
+    {
+      "test": "No forbidden placeholder strings.",
+      "status": "pass",
+      "details": "Scanned both files. Zero matches."
+    }
+  ],
+  "bugs": [],
+  "decision": "PASS"
+}

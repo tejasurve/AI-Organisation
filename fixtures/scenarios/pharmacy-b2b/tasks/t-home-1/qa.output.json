@@ -1,0 +1,57 @@
+{
+  "taskId": "t-home-1",
+  "testPlan": [
+    "Verify the file set lands the three Home-tab read endpoints: app/api/medicines/search/route.ts, app/api/distributors/route.ts, app/api/offers/route.ts.",
+    "Verify each handler resolves the retailer via getSession() and returns 401 with { error: 'unauthenticated' } when the cookie is missing (defence in depth).",
+    "Verify each handler exports `dynamic = 'force-dynamic'` so Next 14 does not attempt static generation on cookie-aware routes.",
+    "Verify GET /api/medicines/search reads ?q from the URL (default empty), calls searchMedicines(q), maps each result through getDistributor to attach the {id, name} sub-object the search-results UI expects, and caps the response at 50 rows.",
+    "Verify GET /api/distributors returns the canonical UI projection (id, name, region, rating).",
+    "Verify GET /api/offers returns active offers (validUntil >= now, sortOrder ascending) with the distributor sub-object and validUntil ISO-formatted.",
+    "Verify the response shapes match the CTO contract exactly (no extra fields, no missing fields).",
+    "Search files[].content for forbidden placeholder strings."
+  ],
+  "results": [
+    {
+      "test": "File set covers the three Home-tab read endpoints.",
+      "status": "pass",
+      "details": "3 files declared at app/api/medicines/search/route.ts, app/api/distributors/route.ts, app/api/offers/route.ts. All Next 14 Route Handler convention paths."
+    },
+    {
+      "test": "401 short-circuit on missing session cookie (3/3 handlers).",
+      "status": "pass",
+      "details": "All three handlers call getSession() at the top and return NextResponse.json({ error: 'unauthenticated' }, { status: 401 }) when the result is null. Confirmed by tracing each route function head."
+    },
+    {
+      "test": "Force-dynamic export present in all 3 handlers.",
+      "status": "pass",
+      "details": "Each file has `export const dynamic = 'force-dynamic'` immediately after the imports. Required because each handler reads cookies() via getSession()."
+    },
+    {
+      "test": "GET /api/medicines/search shape and behaviour.",
+      "status": "pass",
+      "details": "Reads ?q via new URL(request.url).searchParams.get('q') ?? ''. Calls searchMedicines(q).slice(0, 50). Maps each row to { id, name, brand, genericName, distributor: { id, name }, mrpPaise, sellingPricePaise, scheme, packSize }. Falls back to 'Unknown distributor' if the distributor row is missing (defence-in-depth - in-memory invariant says this never happens). Co-located vitest covers (a) 401 unauthenticated, (b) empty q -> non-empty results with the right shape, (c) case-insensitive q filtering."
+    },
+    {
+      "test": "GET /api/distributors response shape.",
+      "status": "pass",
+      "details": "Returns { distributors: [{ id, name, region, rating }] } matching the CTO contract. listDistributors() already sorts by name."
+    },
+    {
+      "test": "GET /api/offers response shape.",
+      "status": "pass",
+      "details": "Returns { offers: [{ id, title, description, bannerLabel, validUntil (ISO string), distributor: { id, name } }] }. listOffers() filters expired entries and sorts by sortOrder, so the UI carousel renders in the documented order without further work."
+    },
+    {
+      "test": "Response shapes match the CTO contract.",
+      "status": "pass",
+      "details": "Cross-checked each handler's response object against the CTO apiContracts entries. medicines/search: matches (no extras). distributors: matches. offers: matches with the explicit ISO conversion for validUntil (Date is not JSON-serialisable as ISO without .toISOString())."
+    },
+    {
+      "test": "No forbidden placeholder strings.",
+      "status": "pass",
+      "details": "Scanned all 3 files. Zero matches."
+    }
+  ],
+  "bugs": [],
+  "decision": "PASS"
+}

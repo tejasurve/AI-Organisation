@@ -1,0 +1,19 @@
+{
+  "taskId": "t-cart-1",
+  "summary": "Audited the three cart endpoints + the shared cart-response helper. Every handler is auth-gated (401 without the session cookie), reads only its own retailer's cart rows (retailerId from session, never from the body), validates input strictly, and returns a typed JSON payload. No critical or high-severity vulnerabilities were found. One medium-severity item (no per-session rate limit + no max-cart-size enforcement) and one low-severity item (no Cache-Control: no-store on writes) are documented for the cycle-2 backlog.",
+  "vulnerabilities": [
+    {
+      "severity": "medium",
+      "description": "POST /api/cart/items has no rate limit and no max-cart-size cap. An authenticated retailer (or anyone holding the unsigned cookie from t-shell-2) can call addCartItem in a loop with distinct medicineIds to exhaust the in-memory store's heap and cause a denial of service for that retailer's session, or with the same medicineId to grow the qty integer past safe-integer territory (~Rs.18 trillion / unit-price; impossible at current unit prices but worth the safety net).",
+      "recommendation": "Cycle 2: add a per-session rate limit (e.g. 60 RPS) and a max-distinct-lines cap on the cart (e.g. 200) - both rejected with 429 and 409 respectively. Pair with the qty * unitPricePaise safe-integer assertion already recommended for createOrdersFromCart in t-data-1's audit."
+    },
+    {
+      "severity": "low",
+      "description": "POST and DELETE both return the full cart payload but do not set Cache-Control: no-store. NextResponse.json defaults to no caching for dynamic routes, but a downstream proxy / CDN that ignores Vary: Cookie could theoretically cache the body and serve it to a different retailer. Not a current risk because the only deploy target is Vercel (which respects the dynamic flag) but worth recording for self-hosted reverse-proxy deployments.",
+      "recommendation": "Add `headers: { 'cache-control': 'private, no-store' }` to NextResponse.json calls on the cart endpoints. Trivial; defer to cycle-2 hardening pass alongside the same fix for /api/medicines/search."
+    }
+  ],
+  "promptInjectionRisk": "None. No file in the change set issues an LLM call, performs LLM-mediated I/O, renders untrusted text, or executes shell or filesystem operations. medicineId flows only into Map .get() lookups against in-memory rows; qty flows only into integer math. The buildCartResponse helper composes typed primitives into a typed JSON object with no string interpolation that could reach a model surface.",
+  "decision": "GO",
+  "requiredFixes": []
+}

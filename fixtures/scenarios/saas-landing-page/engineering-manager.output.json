@@ -1,0 +1,68 @@
+{
+  "features": [
+    {
+      "id": "f-signup-storage",
+      "name": "Signup capture endpoint and storage",
+      "description": "Server-side endpoint and Postgres table that persist email signups with deduplication on email.",
+      "priority": "high",
+      "status": "pending"
+    },
+    {
+      "id": "f-landing-page",
+      "name": "Public landing page with signup form",
+      "description": "One-page Next.js + Tailwind landing site (hero, features, signup form, footer) deployed on Vercel.",
+      "priority": "high",
+      "status": "pending"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "t-signup-storage-1",
+      "featureId": "f-signup-storage",
+      "description": "Define the Drizzle schema for the signups table matching the CTO spec (id uuid pk, email text not null, source text not null default 'landing-v1', created_at timestamptz, unique(email)) and re-export it from the schema barrel.",
+      "assignedTo": "developer",
+      "estimatedHours": 2,
+      "status": "pending"
+    },
+    {
+      "id": "t-signup-storage-2",
+      "featureId": "f-signup-storage",
+      "description": "Implement POST /api/signup as a Next.js Route Handler: validate the email field, insert into signups, return { id, status: 'queued' | 'duplicate' } per the CTO contract.",
+      "assignedTo": "developer",
+      "estimatedHours": 3,
+      "status": "pending"
+    },
+    {
+      "id": "t-signup-storage-3",
+      "featureId": "f-signup-storage",
+      "description": "QA the signup endpoint: submit a valid email (expect 200 + status: queued), submit the same email again (expect status: duplicate), submit a malformed body (expect 400). Document results.",
+      "assignedTo": "qa",
+      "estimatedHours": 2,
+      "status": "pending"
+    },
+    {
+      "id": "t-landing-page-1",
+      "featureId": "f-landing-page",
+      "description": "Set up the Next.js 14 + Tailwind project skeleton, configure the Vercel deployment, and verify a placeholder page renders on the production domain.",
+      "assignedTo": "developer",
+      "estimatedHours": 3,
+      "status": "pending"
+    },
+    {
+      "id": "t-landing-page-2",
+      "featureId": "f-landing-page",
+      "description": "Produce a layout spec for the landing page (hero, headline, 3 feature bullets, single-field email form, primary CTA, success/error states).",
+      "assignedTo": "designer",
+      "estimatedHours": 3,
+      "status": "pending"
+    },
+    {
+      "id": "t-landing-page-3",
+      "featureId": "f-landing-page",
+      "description": "Implement the landing page UI per the design spec, including form validation, optimistic submit feedback, and success/error states wired to POST /api/signup.",
+      "assignedTo": "developer",
+      "estimatedHours": 4,
+      "status": "pending"
+    }
+  ]
+}

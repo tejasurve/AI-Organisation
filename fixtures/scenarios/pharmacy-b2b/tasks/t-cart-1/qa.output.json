@@ -1,0 +1,63 @@
+{
+  "taskId": "t-cart-1",
+  "testPlan": [
+    "Verify the file set lands the cart endpoints + the shared cart-response helper: lib/api/cart-response.ts, app/api/cart/route.ts, app/api/cart/items/route.ts, app/api/cart/items/[medicineId]/route.ts.",
+    "Verify buildCartResponse groups by distributor, sorts groups by distributor name, computes per-group subtotalPaise as sum(qty * unitPricePaise), grandTotalPaise as the same sum across all groups, and itemCount as sum(qty).",
+    "Verify buildCartResponse silently skips cart rows whose medicine row no longer exists (defence-in-depth invariant).",
+    "Verify GET /api/cart returns 401 without the session cookie and the cart payload otherwise.",
+    "Verify POST /api/cart/items: 401 without cookie, 400 on invalid JSON, 400 on missing medicineId, 404 on unknown medicineId, 200 + payload on success.",
+    "Verify POST /api/cart/items defaults qty to 1 when missing/non-numeric/<1 (Number.isFinite + >= 1 + Math.floor).",
+    "Verify DELETE /api/cart/items/[medicineId] is idempotent (does not 404 on missing line) and returns the updated payload.",
+    "Verify all 3 handlers export `dynamic = 'force-dynamic'`.",
+    "Search files[].content for forbidden placeholder strings."
+  ],
+  "results": [
+    {
+      "test": "File set covers cart endpoints + shared response helper.",
+      "status": "pass",
+      "details": "4 files: lib/api/cart-response.ts, app/api/cart/route.ts, app/api/cart/items/route.ts, app/api/cart/items/[medicineId]/route.ts. The dynamic [medicineId] segment uses Next 14's bracket convention."
+    },
+    {
+      "test": "buildCartResponse grouping and totals.",
+      "status": "pass",
+      "details": "groupsMap keyed by distributorId; per item, lineTotal = qty * unitPricePaise added to group.subtotalPaise + grandTotalPaise; itemCount += qty. Final groups Array.from(map.values()).sort(by distributor.name). Co-located vitest verifies the math with a 3-line cart spanning 2 distributors."
+    },
+    {
+      "test": "buildCartResponse skips rows with missing medicine.",
+      "status": "pass",
+      "details": "if (!med) continue; runs first inside the loop, so a stale cart row whose medicine has been deleted from the catalogue does not crash the endpoint. In-memory invariant says this can't happen, but the guard is cheap defence in depth."
+    },
+    {
+      "test": "GET /api/cart returns 401 without cookie, payload otherwise.",
+      "status": "pass",
+      "details": "if (!session) -> 401 { error: 'unauthenticated' }. Otherwise NextResponse.json(buildCartResponse(session.retailerId)). Single source of truth for the wire shape."
+    },
+    {
+      "test": "POST /api/cart/items 5-branch decision matrix.",
+      "status": "pass",
+      "details": "(1) no cookie -> 401. (2) req.json() throws -> 400 'invalid JSON body'. (3) missing/empty trimmed medicineId -> 400 'medicineId is required'. (4) unknown medicineId (getMedicine returns undefined) -> 404 'medicine not found'. (5) success -> addCartItem + 200 + buildCartResponse. Co-located vitest with mocked next/headers covers all 5 branches."
+    },
+    {
+      "test": "qty defaulting / coercion.",
+      "status": "pass",
+      "details": "qty = Number.isFinite(body.qty) && body.qty >= 1 ? Math.floor(body.qty) : 1. Missing -> 1. NaN -> 1. -3 -> 1. 2.7 -> 2. Reasonable for the tap-Add-to-cart flow."
+    },
+    {
+      "test": "DELETE /api/cart/items/[medicineId] is idempotent.",
+      "status": "pass",
+      "details": "removeCartItem returns boolean; the handler ignores it. Both 'cart had this medicine' and 'cart did not have this medicine' produce the same 200 + cart payload response. Matches the cart UI's 'Remove' button which fires-and-forgets."
+    },
+    {
+      "test": "All 3 route handlers export dynamic = 'force-dynamic'.",
+      "status": "pass",
+      "details": "app/api/cart/route.ts, app/api/cart/items/route.ts, app/api/cart/items/[medicineId]/route.ts each declare `export const dynamic = 'force-dynamic'` immediately after imports. Required because all three call cookies() via getSession()."
+    },
+    {
+      "test": "No forbidden placeholder strings.",
+      "status": "pass",
+      "details": "Scanned all 4 files. Zero matches."
+    }
+  ],
+  "bugs": [],
+  "decision": "PASS"
+}

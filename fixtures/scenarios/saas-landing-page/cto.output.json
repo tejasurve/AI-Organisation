@@ -1,0 +1,34 @@
+{
+  "architecture": {
+    "frontend": "Next.js 14 (App Router) + Tailwind CSS, deployed on Vercel",
+    "backend": "Single Next.js Route Handler at app/api/signup/route.ts (no separate Node service this cycle)",
+    "database": "PostgreSQL via Drizzle ORM, hosted on Neon (free tier)",
+    "infrastructure": "Vercel (frontend + API route, automatic SSL + global CDN) + Neon Postgres + Cloudflare for the apex domain"
+  },
+  "apiContracts": [
+    {
+      "endpoint": "/api/signup",
+      "method": "POST",
+      "description": "Public endpoint called by the landing page form to capture an email signup. Idempotent on (email): a duplicate submission returns status: 'duplicate' with the original id rather than a 409.",
+      "request": { "email": "string", "source": "string (optional, default 'landing-v1')" },
+      "response": { "id": "uuid", "status": "queued | duplicate" }
+    }
+  ],
+  "databaseSchema": [
+    {
+      "table": "signups",
+      "fields": [
+        "id: uuid primary key default gen_random_uuid()",
+        "email: text not null",
+        "source: text not null default 'landing-v1'",
+        "created_at: timestamptz not null default now()",
+        "unique(email)"
+      ]
+    }
+  ],
+  "risks": [
+    "security: /api/signup is intentionally public; needs IP-based rate limiting (e.g. 5 req/min) before launch — flag for security review when the handler task lands",
+    "compliance: signups holds PII (email); add a privacy notice on the form and confirm Neon's data residency before launch",
+    "scaling: not relevant this cycle (validate phase, < 10k rows expected)"
+  ]
+}

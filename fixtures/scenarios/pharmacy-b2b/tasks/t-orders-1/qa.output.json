@@ -1,0 +1,75 @@
+{
+  "taskId": "t-orders-1",
+  "testPlan": [
+    "Verify the file set lands both order endpoints in a single route file: app/api/orders/route.ts (exports GET + POST).",
+    "Verify GET /api/orders defaults to ?status=active when the parameter is missing.",
+    "Verify GET /api/orders returns 400 'status must be active or closed' on invalid status (e.g. ?status=foo, ?status=delivered).",
+    "Verify GET /api/orders returns 401 without a session cookie.",
+    "Verify GET /api/orders maps each row to the documented projection: id, status, placedAt (ISO string), expectedDelivery (ISO string or null), itemCount, totalPaise, distributor: { id, name }.",
+    "Verify GET /api/orders 'closed' returns only delivered/cancelled rows; 'active' returns only placed/acknowledged/out_for_delivery rows.",
+    "Verify POST /api/orders returns 409 'cart is empty' when nothing to fan out.",
+    "Verify POST /api/orders fans out one order per distinct distributor and returns { orderIds, orderCount } per the CTO contract.",
+    "Verify POST /api/orders clears the cart on success (downstream invariant; relies on createOrdersFromCart).",
+    "Verify dynamic = 'force-dynamic' is exported.",
+    "Search files[].content for forbidden placeholder strings."
+  ],
+  "results": [
+    {
+      "test": "Single route file exports GET + POST.",
+      "status": "pass",
+      "details": "app/api/orders/route.ts declares `export async function GET` and `export async function POST`. Next 14 multi-method route convention."
+    },
+    {
+      "test": "GET defaults ?status to active.",
+      "status": "pass",
+      "details": "raw = (searchParams.get('status') ?? 'active').toLowerCase(). When the param is missing, falls into the active branch and listOrders is called with group='active'. Confirmed by tracing GET head."
+    },
+    {
+      "test": "GET returns 400 on invalid status.",
+      "status": "pass",
+      "details": "if (raw !== 'active' && raw !== 'closed') -> 400 'status must be active or closed'. ?status=delivered (a valid OrderStatus but not a valid GROUP) is correctly rejected because the parameter is the *group*, not the status itself."
+    },
+    {
+      "test": "GET returns 401 without cookie.",
+      "status": "pass",
+      "details": "if (!session) -> 401 'unauthenticated'. Same defence-in-depth pattern as the other authenticated reads."
+    },
+    {
+      "test": "GET projection matches the CTO contract.",
+      "status": "pass",
+      "details": "Each row mapped to { id, status, placedAt: o.placedAt.toISOString(), expectedDelivery: o.expectedDelivery ? toISOString : null, itemCount, totalPaise, distributor: { id, name } | { id, name: 'Unknown distributor' } }. ISO conversion explicit because Date does not auto-serialise as ISO via NextResponse.json's default."
+    },
+    {
+      "test": "Status grouping is correct.",
+      "status": "pass",
+      "details": "listOrders is the source of truth for filtering (verified in t-data-1 audit). The route only translates the group string and trusts the helper. Co-located vitest verifies that for both 'active' and 'closed' every returned row has a status from the corresponding ACTIVE/CLOSED set."
+    },
+    {
+      "test": "POST 409 on empty cart.",
+      "status": "pass",
+      "details": "createOrdersFromCart returns []. if (created.length === 0) -> 409 'cart is empty'. Cart UI can show an empty-state message rather than misreading a 200 as success."
+    },
+    {
+      "test": "POST fan-out + response shape.",
+      "status": "pass",
+      "details": "On non-empty cart: createOrdersFromCart returns Array<{ id, distributorId }>. Response: { orderIds: created.map(c => c.id), orderCount: created.length }. Co-located vitest verifies a 2-distributor cart produces orderCount: 2."
+    },
+    {
+      "test": "POST clears the cart on success.",
+      "status": "pass",
+      "details": "createOrdersFromCart calls clearCart(retailerId) at the end of its synchronous block (verified in t-data-1 audit). The route does not need to clear it again. Atomicity is guaranteed by the synchronous JS event loop in the in-memory implementation."
+    },
+    {
+      "test": "Force-dynamic exported.",
+      "status": "pass",
+      "details": "`export const dynamic = 'force-dynamic'` declared after imports. Required because both GET and POST call cookies() via getSession()."
+    },
+    {
+      "test": "No forbidden placeholder strings.",
+      "status": "pass",
+      "details": "Scanned. Zero matches."
+    }
+  ],
+  "bugs": [],
+  "decision": "PASS"
+}

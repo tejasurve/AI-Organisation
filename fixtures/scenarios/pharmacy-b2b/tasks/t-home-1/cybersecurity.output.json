@@ -1,0 +1,19 @@
+{
+  "taskId": "t-home-1",
+  "summary": "Audited the three GET endpoints that drive the Home tab. All three are authenticated reads against the in-memory store, return narrow UI projections, and short-circuit to 401 when the session cookie is missing. No critical or high-severity vulnerabilities were found. One medium-severity item (medicines/search has no rate limit and is enumerable) and one low-severity item (no Cache-Control headers on authenticated reads) are documented for the cycle-2 backlog.",
+  "vulnerabilities": [
+    {
+      "severity": "medium",
+      "description": "GET /api/medicines/search accepts an arbitrary q string and runs an O(n) substring scan over the in-memory catalogue on every request. There is no rate limit and no minimum query length. An authenticated retailer (or anyone who steals the unsigned cookie from t-shell-2) can drive the endpoint at session-bound rate, harvesting the full catalogue or running timing attacks on names. With the seeded 20 rows this is harmless; once the catalogue is real (1000+ SKUs) and a paid model emerges, the endpoint becomes a competitive-intelligence leak.",
+      "recommendation": "Cycle 2: pair the cycle-2 auth signing fix (recommended in t-shell-2 audit) with a per-session rate limit on /api/medicines/search (e.g. 30 RPS via upstash/ratelimit) and reject q.length === 0 unless the request also supplies a category filter (which doesn't exist yet)."
+    },
+    {
+      "severity": "low",
+      "description": "None of the three handlers set Cache-Control headers. Browsers may opportunistically cache the JSON response under the same URL, which means a logout + re-login as a different retailer (when multi-retailer support lands) would briefly show the previous retailer's results. Currently single-retailer-per-device, so this is theoretical; documenting for cycle 2.",
+      "recommendation": "Add `Cache-Control: private, no-store` to authenticated GET responses. Trivial: NextResponse.json(body, { headers: { 'cache-control': 'private, no-store' } }) per handler, or wrap in a small helper. Defer to cycle 2 hardening pass."
+    }
+  ],
+  "promptInjectionRisk": "None. The q query parameter flows only into JS .toLowerCase() + .includes() comparisons against in-memory medicine fields. Results are JSON-serialised through NextResponse.json (which escapes ALL HTML-significant characters). There is no path through which the q string reaches a model prompt, the DOM as raw HTML, a shell, or the filesystem.",
+  "decision": "GO",
+  "requiredFixes": []
+}

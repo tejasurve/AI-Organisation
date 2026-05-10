@@ -1,0 +1,50 @@
+{
+  "taskId": "t-landing-page-1",
+  "implementationPlan": "Stand up a minimal Next.js 14 (App Router) + Tailwind CSS 3 project skeleton that the downstream UI task (t-landing-page-3) can drop a page.tsx into and the route handler from t-signup-storage-2 can sit under app/api/signup/. Configuration matches the CTO architecture exactly: Next 14 + Tailwind on Vercel-compatible defaults. Include the tsconfig path mapping @/* → ./* so the route handler's `import { findSignupByEmail } from \"@/lib/db/client\"` resolves cleanly. Ship the standard next-env.d.ts so npm run dev does not nag on first launch. The root layout is intentionally minimal — branding lives in page.tsx so the UI task owns the visual identity. globals.css imports Tailwind's three layers and sets a single base font-family so the page looks reasonable even before the UI task lands.",
+  "files": [
+    {
+      "path": "package.json",
+      "content": "{\n  \"name\": \"saas-landing-page\",\n  \"version\": \"0.1.0\",\n  \"private\": true,\n  \"scripts\": {\n    \"dev\": \"next dev\",\n    \"build\": \"next build\",\n    \"start\": \"next start\",\n    \"test\": \"vitest run\"\n  },\n  \"dependencies\": {\n    \"next\": \"^14.2.0\",\n    \"react\": \"^18.3.0\",\n    \"react-dom\": \"^18.3.0\",\n    \"drizzle-orm\": \"^0.44.0\"\n  },\n  \"devDependencies\": {\n    \"@types/node\": \"^22.0.0\",\n    \"@types/react\": \"^18.3.0\",\n    \"@types/react-dom\": \"^18.3.0\",\n    \"autoprefixer\": \"^10.4.0\",\n    \"postcss\": \"^8.4.0\",\n    \"tailwindcss\": \"^3.4.0\",\n    \"typescript\": \"^5.6.0\",\n    \"vitest\": \"^3.2.0\"\n  }\n}\n"
+    },
+    {
+      "path": "next.config.mjs",
+      "content": "/** @type {import('next').NextConfig} */\nconst nextConfig = {\n  reactStrictMode: true,\n};\n\nexport default nextConfig;\n"
+    },
+    {
+      "path": "tsconfig.json",
+      "content": "{\n  \"compilerOptions\": {\n    \"target\": \"ES2022\",\n    \"lib\": [\"dom\", \"dom.iterable\", \"esnext\"],\n    \"allowJs\": true,\n    \"skipLibCheck\": true,\n    \"strict\": true,\n    \"noEmit\": true,\n    \"esModuleInterop\": true,\n    \"module\": \"esnext\",\n    \"moduleResolution\": \"bundler\",\n    \"resolveJsonModule\": true,\n    \"isolatedModules\": true,\n    \"jsx\": \"preserve\",\n    \"incremental\": true,\n    \"paths\": {\n      \"@/*\": [\"./*\"]\n    },\n    \"plugins\": [{ \"name\": \"next\" }]\n  },\n  \"include\": [\"next-env.d.ts\", \"**/*.ts\", \"**/*.tsx\", \".next/types/**/*.ts\"],\n  \"exclude\": [\"node_modules\"]\n}\n"
+    },
+    {
+      "path": "tailwind.config.ts",
+      "content": "import type { Config } from \"tailwindcss\";\n\nexport default {\n  content: [\"./app/**/*.{ts,tsx}\"],\n  theme: {\n    extend: {\n      fontFamily: {\n        sans: [\n          \"Inter\",\n          \"ui-sans-serif\",\n          \"system-ui\",\n          \"-apple-system\",\n          \"Segoe UI\",\n          \"sans-serif\",\n        ],\n      },\n    },\n  },\n  plugins: [],\n} satisfies Config;\n"
+    },
+    {
+      "path": "postcss.config.mjs",
+      "content": "export default {\n  plugins: {\n    tailwindcss: {},\n    autoprefixer: {},\n  },\n};\n"
+    },
+    {
+      "path": "next-env.d.ts",
+      "content": "/// <reference types=\"next\" />\n/// <reference types=\"next/image-types/global\" />\n\n// NOTE: This file should not be edited\n// see https://nextjs.org/docs/basic-features/typescript for more information.\n"
+    },
+    {
+      "path": "app/layout.tsx",
+      "content": "import type { Metadata } from \"next\";\nimport type { ReactNode } from \"react\";\n\nimport \"./globals.css\";\n\nexport const metadata: Metadata = {\n  title: \"Paperclip — managed AI organisation as a service\",\n  description:\n    \"Submit an idea. An AI org of CEO, CTO, EM, Devs, QA, and Security turns it into shipped code.\",\n};\n\nexport default function RootLayout({\n  children,\n}: {\n  children: ReactNode;\n}) {\n  return (\n    <html lang=\"en\">\n      <body className=\"bg-white text-slate-900 antialiased font-sans\">\n        {children}\n      </body>\n    </html>\n  );\n}\n"
+    },
+    {
+      "path": "app/globals.css",
+      "content": "@tailwind base;\n@tailwind components;\n@tailwind utilities;\n"
+    }
+  ],
+  "tests": [
+    {
+      "description": "Skeleton self-check: declares the right Next/React/Tailwind versions, maps the @/ path alias, scans app/ for Tailwind classes, and ships the standard next-env.d.ts",
+      "code": "import { readFileSync } from \"node:fs\";\nimport { describe, expect, it } from \"vitest\";\n\ndescribe(\"Next.js + Tailwind skeleton matches the CTO architecture\", () => {\n  it(\"package.json declares Next 14, React 18, Tailwind 3, drizzle-orm runtime, and a vitest dev dep\", () => {\n    const pkg = JSON.parse(readFileSync(\"./package.json\", \"utf-8\"));\n    expect(pkg.dependencies.next).toMatch(/^\\^?14\\./);\n    expect(pkg.dependencies.react).toMatch(/^\\^?18\\./);\n    expect(pkg.dependencies[\"react-dom\"]).toMatch(/^\\^?18\\./);\n    expect(pkg.dependencies[\"drizzle-orm\"]).toBeDefined();\n    expect(pkg.devDependencies.tailwindcss).toMatch(/^\\^?3\\./);\n    expect(pkg.devDependencies.typescript).toMatch(/^\\^?5\\./);\n    expect(pkg.devDependencies.vitest).toBeDefined();\n  });\n\n  it(\"package.json scripts cover dev / build / start / test\", () => {\n    const pkg = JSON.parse(readFileSync(\"./package.json\", \"utf-8\"));\n    expect(pkg.scripts.dev).toBe(\"next dev\");\n    expect(pkg.scripts.build).toBe(\"next build\");\n    expect(pkg.scripts.start).toBe(\"next start\");\n    expect(pkg.scripts.test).toBe(\"vitest run\");\n  });\n\n  it(\"tsconfig.json maps the @/ path alias to repo root and enables strict + bundler resolution\", () => {\n    const ts = JSON.parse(readFileSync(\"./tsconfig.json\", \"utf-8\"));\n    expect(ts.compilerOptions.strict).toBe(true);\n    expect(ts.compilerOptions.moduleResolution).toBe(\"bundler\");\n    expect(ts.compilerOptions.jsx).toBe(\"preserve\");\n    expect(ts.compilerOptions.paths[\"@/*\"]).toEqual([\"./*\"]);\n  });\n\n  it(\"tailwind config scans app/ for ts and tsx files\", () => {\n    const cfg = readFileSync(\"./tailwind.config.ts\", \"utf-8\");\n    expect(cfg).toMatch(/content.*\\.\\/app\\/\\*\\*/);\n  });\n\n  it(\"next-env.d.ts ships the standard Next.js type references\", () => {\n    const env = readFileSync(\"./next-env.d.ts\", \"utf-8\");\n    expect(env).toMatch(/<reference types=\"next\" \\/>/);\n    expect(env).toMatch(/<reference types=\"next\\/image-types\\/global\" \\/>/);\n  });\n});\n"
+    }
+  ],
+  "notes": [
+    "next-env.d.ts is intentionally shipped (not left for first-launch generation) so vitest typecheck and IDE typecheck both work on a fresh checkout, before npm run dev has ever been called.",
+    "The root layout deliberately contains no header / nav / footer — those belong to the landing page itself (t-landing-page-3) so they can be redesigned without touching the layout. The layout's only opinions are font-family and base background colour.",
+    "vitest is included as a dev dep so the developer-authored tests for both this skeleton and the route handler from t-signup-storage-2 can run in the same project. No vitest.config.ts is shipped — vitest auto-discovers *.test.ts under the project root.",
+    "drizzle-orm is in dependencies (not devDependencies) because lib/db/client.ts (from t-signup-storage-2) imports its types at runtime. drizzle-kit is intentionally NOT included — that belongs to the build pipeline, not the runtime."
+  ]
+}

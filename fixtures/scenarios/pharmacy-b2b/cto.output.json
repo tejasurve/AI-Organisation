@@ -1,0 +1,204 @@
+{
+  "architecture": {
+    "frontend": "Next.js 14 (App Router) + Tailwind CSS, mobile-first responsive layout. Authenticated /dashboard route renders a fixed bottom tab bar (Home / Orders / Cart / Profile) on small screens that promotes to a side rail at md+. Client components only where state is needed (search input, cart updates, tab toggles); everything else is a server component reading from the in-process data layer.",
+    "backend": "Next.js Route Handlers under app/api/* in the same Next project (no separate Node service). Auth uses a signed cookie set via Next's cookies() API; middleware at the project root guards /dashboard/* and every /api/* route except /api/auth/login. All handlers are typed end-to-end via shared zod schemas in lib/api/contracts.ts.",
+    "database": "In-memory storage via lib/db/store.ts (Map<string, Record>), seeded at module load with 1 pilot retailer, 4 distributors, ~20 medicines, 3 offers, and 2 outstanding-payment rows. The schema is shaped to match a future Postgres + Drizzle migration so the same TypeScript types survive the swap; no migration this cycle.",
+    "infrastructure": "Single Vercel deploy (frontend + Route Handlers behind one origin). Static assets via Vercel CDN. No external services this cycle. Future cycles: Neon Postgres for persistence, per-distributor HTTP integration via a simple fanout, and S3-compatible storage for prescription scans."
+  },
+  "apiContracts": [
+    {
+      "endpoint": "/api/auth/login",
+      "method": "POST",
+      "description": "Pilot login: takes a retailer license number, looks it up in the in-memory store, sets the pharmacy-session cookie (HttpOnly, SameSite=Lax) and returns the retailer summary. No password this cycle (single pilot retailer per device).",
+      "request": { "licenseNumber": "string" },
+      "response": { "retailer": { "id": "string", "name": "string", "storeName": "string", "licenseNumber": "string" } }
+    },
+    {
+      "endpoint": "/api/auth/logout",
+      "method": "POST",
+      "description": "Clears the pharmacy-session cookie.",
+      "request": {},
+      "response": { "ok": "true" }
+    },
+    {
+      "endpoint": "/api/medicines/search",
+      "method": "GET",
+      "description": "Case-insensitive substring search over medicine name, brand, and generic name. Empty q returns the full catalogue (used by the search results page when a retailer lands without a query). Each result carries the distributor it ships from so the UI can render the price + supplier chip.",
+      "request": { "q": "string (optional)" },
+      "response": { "results": [{ "id": "string", "name": "string", "brand": "string", "genericName": "string", "distributor": { "id": "string", "name": "string" }, "mrpPaise": "integer", "sellingPricePaise": "integer", "scheme": "string | null", "packSize": "string" }] }
+    },
+    {
+      "endpoint": "/api/distributors",
+      "method": "GET",
+      "description": "List all distributors the retailer can buy from. Used by the Home tab quick-link and the cart line items.",
+      "request": {},
+      "response": { "distributors": [{ "id": "string", "name": "string", "region": "string", "rating": "number" }] }
+    },
+    {
+      "endpoint": "/api/offers",
+      "method": "GET",
+      "description": "List of currently-active offers shown in the Home tab carousel. Returned in sortOrder. Each entry references the distributor running the offer.",
+      "request": {},
+      "response": { "offers": [{ "id": "string", "title": "string", "description": "string", "distributor": { "id": "string", "name": "string" }, "validUntil": "ISO-8601 string" }] }
+    },
+    {
+      "endpoint": "/api/cart",
+      "method": "GET",
+      "description": "Returns the current retailer's cart, grouped by distributor with a per-distributor subtotal and a grand total. Drives the Cart tab.",
+      "request": {},
+      "response": { "groups": [{ "distributor": { "id": "string", "name": "string" }, "items": [{ "medicineId": "string", "name": "string", "brand": "string", "qty": "integer", "unitPricePaise": "integer", "lineTotalPaise": "integer" }], "subtotalPaise": "integer" }], "grandTotalPaise": "integer", "itemCount": "integer" }
+    },
+    {
+      "endpoint": "/api/cart/items",
+      "method": "POST",
+      "description": "Add a medicine to the current retailer's cart, or increment the qty if it is already there. Validates that the medicineId exists. Returns the updated cart payload (same shape as GET /api/cart) so the Cart tab can render without a second round-trip.",
+      "request": { "medicineId": "string", "qty": "integer (>=1, default 1)" },
+      "response": { "groups": [{ "distributor": { "id": "string", "name": "string" }, "items": [{ "medicineId": "string", "name": "string", "brand": "string", "qty": "integer", "unitPricePaise": "integer", "lineTotalPaise": "integer" }], "subtotalPaise": "integer" }], "grandTotalPaise": "integer", "itemCount": "integer" }
+    },
+    {
+      "endpoint": "/api/cart/items/{medicineId}",
+      "method": "DELETE",
+      "description": "Remove a medicine from the current retailer's cart. Returns the updated cart payload.",
+      "request": { "medicineId": "string (path param)" },
+      "response": { "groups": [{ "distributor": { "id": "string", "name": "string" }, "items": [{ "medicineId": "string", "name": "string", "brand": "string", "qty": "integer", "unitPricePaise": "integer", "lineTotalPaise": "integer" }], "subtotalPaise": "integer" }], "grandTotalPaise": "integer", "itemCount": "integer" }
+    },
+    {
+      "endpoint": "/api/orders",
+      "method": "POST",
+      "description": "Place orders from the current retailer's cart. The cart is fanned out into one order per distributor (so the retailer's UI can show each supplier's order separately under Orders > Active). Cart is cleared on success.",
+      "request": {},
+      "response": { "orderIds": ["string"], "orderCount": "integer" }
+    },
+    {
+      "endpoint": "/api/orders",
+      "method": "GET",
+      "description": "List the retailer's orders, filtered by status group. status=active returns placed | acknowledged | out_for_delivery; status=closed returns delivered | cancelled. Sorted newest-first.",
+      "request": { "status": "active | closed" },
+      "response": { "orders": [{ "id": "string", "distributor": { "id": "string", "name": "string" }, "status": "placed | acknowledged | out_for_delivery | delivered | cancelled", "placedAt": "ISO-8601 string", "expectedDelivery": "ISO-8601 string | null", "itemCount": "integer", "totalPaise": "integer" }] }
+    },
+    {
+      "endpoint": "/api/profile",
+      "method": "GET",
+      "description": "Returns the current retailer's profile card plus the outstanding-payments breakdown shown on the Home tab tile.",
+      "request": {},
+      "response": { "retailer": { "id": "string", "name": "string", "ownerName": "string", "licenseNumber": "string", "storeName": "string", "storeAddress": "string", "phone": "string", "email": "string", "gstin": "string", "favouritesCount": "integer" }, "outstanding": { "totalPaise": "integer", "perDistributor": [{ "distributor": { "id": "string", "name": "string" }, "amountPaise": "integer" }] } }
+    }
+  ],
+  "databaseSchema": [
+    {
+      "table": "retailers",
+      "fields": [
+        "id: string primary key (uuid in production)",
+        "name: string not null (display name shown on Profile)",
+        "owner_name: string not null",
+        "license_number: string not null unique (used as login id this cycle)",
+        "store_name: string not null",
+        "store_address: string not null",
+        "phone: string not null",
+        "email: string not null",
+        "gstin: string not null",
+        "favourites_medicine_ids: string[] not null default []",
+        "created_at: timestamp not null"
+      ]
+    },
+    {
+      "table": "distributors",
+      "fields": [
+        "id: string primary key",
+        "name: string not null",
+        "region: string not null",
+        "supplier_code: string not null unique",
+        "contact_phone: string not null",
+        "contact_email: string not null",
+        "rating: number not null (0-5, decimal)",
+        "created_at: timestamp not null"
+      ]
+    },
+    {
+      "table": "medicines",
+      "fields": [
+        "id: string primary key",
+        "name: string not null",
+        "brand: string not null",
+        "manufacturer: string not null",
+        "generic_name: string not null",
+        "distributor_id: string not null references distributors(id)",
+        "mrp_paise: integer not null (>=0)",
+        "selling_price_paise: integer not null (>=0)",
+        "scheme: string nullable (e.g. '10+1 free' or null)",
+        "pack_size: string not null (e.g. '10 tablets', '100 ml syrup')",
+        "hsn_code: string not null",
+        "created_at: timestamp not null"
+      ]
+    },
+    {
+      "table": "offers",
+      "fields": [
+        "id: string primary key",
+        "title: string not null",
+        "description: string not null",
+        "distributor_id: string not null references distributors(id)",
+        "banner_label: string not null (short text shown on the gradient banner)",
+        "valid_until: timestamp not null",
+        "sort_order: integer not null (lower = earlier in the carousel)",
+        "created_at: timestamp not null"
+      ]
+    },
+    {
+      "table": "cart_items",
+      "fields": [
+        "id: string primary key",
+        "retailer_id: string not null references retailers(id)",
+        "medicine_id: string not null references medicines(id)",
+        "distributor_id: string not null references distributors(id) (denormalised from medicines for easy grouping)",
+        "qty: integer not null (>=1)",
+        "unit_price_paise: integer not null (frozen at add-to-cart time)",
+        "added_at: timestamp not null",
+        "unique(retailer_id, medicine_id)"
+      ]
+    },
+    {
+      "table": "orders",
+      "fields": [
+        "id: string primary key",
+        "retailer_id: string not null references retailers(id)",
+        "distributor_id: string not null references distributors(id)",
+        "status: string not null (one of: placed | acknowledged | out_for_delivery | delivered | cancelled)",
+        "placed_at: timestamp not null",
+        "expected_delivery: timestamp nullable",
+        "total_paise: integer not null (>=0)",
+        "item_count: integer not null (>=1)"
+      ]
+    },
+    {
+      "table": "order_items",
+      "fields": [
+        "id: string primary key",
+        "order_id: string not null references orders(id)",
+        "medicine_id: string not null references medicines(id)",
+        "qty: integer not null (>=1)",
+        "unit_price_paise: integer not null",
+        "line_total_paise: integer not null"
+      ]
+    },
+    {
+      "table": "outstanding_payments",
+      "fields": [
+        "id: string primary key",
+        "retailer_id: string not null references retailers(id)",
+        "distributor_id: string not null references distributors(id)",
+        "amount_due_paise: integer not null (>=0)",
+        "last_updated_at: timestamp not null",
+        "unique(retailer_id, distributor_id)"
+      ]
+    }
+  ],
+  "risks": [
+    "security: mock cookie auth (single shared session secret, no password, no multi-device invalidation) is intentional for the pilot but unsafe for production; flag for a real auth task in cycle 2",
+    "compliance: pharmacy ordering is regulated (drug schedules, Schedule H1/X tracking, narcotics audit trail). This cycle ignores schedule classification and prescription validation; both are mandatory before any non-pilot rollout",
+    "data loss: in-memory Maps reset on every process restart. Acceptable for a demo, blocking for a customer pilot",
+    "scaling: medicine search is a linear scan over the in-memory store. Fine for ~20 medicines; needs Postgres trigram index or Meilisearch beyond ~1000 SKUs",
+    "mobile UX: 'Scan Prescription' is a placeholder tile this cycle; barcode + OCR scan needs a native shell or WebRTC + a vision model and is out of scope",
+    "outstanding-payments accuracy: the per-distributor balance is currently a static seed; integration with each distributor's ledger is a downstream task and the tile must be labelled as 'last reconciled at <ts>' to avoid retailer confusion"
+  ]
+}

@@ -1,0 +1,128 @@
+{
+  "features": [
+    {
+      "id": "f-shell-auth",
+      "name": "App shell + mock retailer auth",
+      "description": "Next.js 14 + Tailwind project skeleton, the login page, and the authenticated /dashboard layout with the bottom tab bar that every other feature lives inside.",
+      "priority": "high",
+      "status": "pending"
+    },
+    {
+      "id": "f-data-spine",
+      "name": "In-memory data spine + shared types",
+      "description": "Single source of truth for retailers, distributors, medicines, offers, cart items, orders, order items, and outstanding payments. In-memory Maps with seed data, plus the shared TypeScript types every Route Handler and page imports.",
+      "priority": "high",
+      "status": "pending"
+    },
+    {
+      "id": "f-home-tab",
+      "name": "Home tab",
+      "description": "Search bar at the top, offers carousel, the 5 quick-link tiles (Distributors, Schemes, Generic Medicines, Scan Prescription, Outstanding Payments), and the supporting catalogue / offers / distributors APIs.",
+      "priority": "high",
+      "status": "pending"
+    },
+    {
+      "id": "f-orders-tab",
+      "name": "Orders tab + place-order API",
+      "description": "Orders list page with Active and Closed sub-tabs, plus the POST /api/orders fanout (cart -> one order per distributor) and GET /api/orders status-grouped reader.",
+      "priority": "high",
+      "status": "pending"
+    },
+    {
+      "id": "f-cart-tab",
+      "name": "Cart tab + cart APIs",
+      "description": "Cart page grouped by distributor with per-distributor subtotal and a grand total, plus the GET / POST / DELETE cart endpoints that drive it.",
+      "priority": "high",
+      "status": "pending"
+    },
+    {
+      "id": "f-profile-tab",
+      "name": "Profile tab",
+      "description": "Read-only retailer card (name, owner, license number, store address, GSTIN, phone, email, favourites count) plus the GET /api/profile endpoint that returns the retailer plus the outstanding-payments breakdown.",
+      "priority": "medium",
+      "status": "pending"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "t-shell-1",
+      "featureId": "f-shell-auth",
+      "description": "Set up the Next.js 14 + Tailwind project skeleton: package.json (next 14.2, react 18, tailwind 3, typescript 5, vitest), tsconfig.json with the @/* alias, next.config.mjs, postcss.config.mjs, tailwind.config.ts (mobile-first content globs), app/globals.css with the Tailwind directives + base background, app/layout.tsx with the html/body shell, and the public login page at app/page.tsx that posts to /api/auth/login. No auth handler yet (lands in t-shell-2); the page just calls fetch and redirects on success.",
+      "assignedTo": "developer",
+      "estimatedHours": 4,
+      "status": "pending"
+    },
+    {
+      "id": "t-shell-2",
+      "featureId": "f-shell-auth",
+      "description": "Implement the mock auth: POST /api/auth/login (look up the retailer by license number against the in-memory store, set the pharmacy-session cookie HttpOnly+SameSite=Lax with a 30-day max-age), POST /api/auth/logout (clear the cookie), middleware.ts that gates /dashboard/* and every /api/* route except /api/auth/login (returns 401 JSON if missing cookie), a small lib/auth/session.ts helper that reads the current retailerId from the request cookies, and the authenticated app/dashboard/layout.tsx that renders the 4-tab bottom navigation (Home / Orders / Cart / Profile) and a stub app/dashboard/page.tsx that redirects to /dashboard/home.",
+      "assignedTo": "developer",
+      "estimatedHours": 4,
+      "status": "pending"
+    },
+    {
+      "id": "t-data-1",
+      "featureId": "f-data-spine",
+      "description": "Implement the in-memory data spine: lib/types.ts (TypeScript types for Retailer, Distributor, Medicine, Offer, CartItem, Order, OrderItem, OutstandingPayment, OrderStatus, derived Money helpers) and lib/db/store.ts (Map-backed stores seeded at module import with 1 pilot retailer, 4 distributors, 20 medicines spanning the four distributors, 3 active offers, 2 outstanding-payment rows; CRUD helpers - getRetailer, listDistributors, listOffers, searchMedicines(q), getMedicine(id), getCart(retailerId), addCartItem, removeCartItem, clearCart, listOrders(retailerId, statusGroup), createOrdersFromCart(retailerId), getOutstandingForRetailer(retailerId)).",
+      "assignedTo": "developer",
+      "estimatedHours": 4,
+      "status": "pending"
+    },
+    {
+      "id": "t-home-1",
+      "featureId": "f-home-tab",
+      "description": "Implement the read APIs that drive the Home tab: GET /api/medicines/search (case-insensitive substring over name + brand + generic, returns each result with its distributor), GET /api/distributors (id/name/region/rating list), GET /api/offers (active offers in sortOrder, each with its distributor). All three use the auth-guarded session helper to identify the retailer (search results may carry per-retailer favourites later) and return 401 if the cookie is missing.",
+      "assignedTo": "developer",
+      "estimatedHours": 3,
+      "status": "pending"
+    },
+    {
+      "id": "t-home-2",
+      "featureId": "f-home-tab",
+      "description": "Build the Home tab page at app/dashboard/home/page.tsx: greeting line with the retailer name, a search bar at the top that links to /dashboard/search?q=..., a horizontally scrollable offers carousel reading from GET /api/offers, the 5 quick-link tiles (Distributors, Schemes, Generic Medicines, Scan Prescription, Outstanding Payments), and an outstanding-payments summary tile that calls GET /api/profile and shows the total + per-distributor breakdown. Mobile-first Tailwind layout, snap-scroll on the carousel.",
+      "assignedTo": "developer",
+      "estimatedHours": 4,
+      "status": "pending"
+    },
+    {
+      "id": "t-cart-1",
+      "featureId": "f-cart-tab",
+      "description": "Implement the cart APIs: GET /api/cart (returns the cart grouped by distributor with subtotals + grand total + itemCount, derived from the in-memory store), POST /api/cart/items (validates medicineId exists, increments qty if already present, returns the same grouped payload), DELETE /api/cart/items/[medicineId] (removes the line, returns the same grouped payload). All three resolve the retailer via the session helper and 401 without it.",
+      "assignedTo": "developer",
+      "estimatedHours": 3,
+      "status": "pending"
+    },
+    {
+      "id": "t-cart-2",
+      "featureId": "f-cart-tab",
+      "description": "Build the Cart tab page at app/dashboard/cart/page.tsx: groups the cart by distributor (heading per supplier with subtotal), each line shows name + brand + qty stepper + remove button + line total, sticky footer with the grand total and a Place Order button that POSTs to /api/orders and on success routes to /dashboard/orders?status=active. Empty-state copy when the cart is empty.",
+      "assignedTo": "developer",
+      "estimatedHours": 3,
+      "status": "pending"
+    },
+    {
+      "id": "t-orders-1",
+      "featureId": "f-orders-tab",
+      "description": "Implement the orders APIs: GET /api/orders?status=active|closed (active = placed | acknowledged | out_for_delivery, closed = delivered | cancelled, sorted newest-first), POST /api/orders (reads the current retailer's cart, fans out into one order per distinct distributorId, copies cart_items into order_items, clears the cart, returns the new orderIds + count). 401 without the session cookie.",
+      "assignedTo": "developer",
+      "estimatedHours": 3,
+      "status": "pending"
+    },
+    {
+      "id": "t-orders-2",
+      "featureId": "f-orders-tab",
+      "description": "Build the Orders tab page at app/dashboard/orders/page.tsx with Active and Closed sub-tabs (segmented control). Each sub-tab calls GET /api/orders with the matching status group and renders order cards (distributor name, status pill with status-color, item count, total, placed-at relative time, expected-delivery when present). Empty-state copy for both tabs.",
+      "assignedTo": "developer",
+      "estimatedHours": 3,
+      "status": "pending"
+    },
+    {
+      "id": "t-profile-1",
+      "featureId": "f-profile-tab",
+      "description": "Implement GET /api/profile (returns the current retailer plus the outstanding-payments breakdown grouped by distributor) and build the Profile tab page at app/dashboard/profile/page.tsx that renders the retailer card (avatar initials, name, store name, license number, owner name, GSTIN, store address, phone, email, favourites count) and an outstanding-payments section listing each distributor's amount-due with the grand total. A logout button at the bottom POSTs /api/auth/logout and routes to /.",
+      "assignedTo": "developer",
+      "estimatedHours": 3,
+      "status": "pending"
+    }
+  ]
+}

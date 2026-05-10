@@ -1,0 +1,19 @@
+{
+  "taskId": "t-cart-2",
+  "implementationPlan": "Build the Cart tab on top of the t-cart-1 endpoints + the t-data-1 store. app/dashboard/cart/page.tsx is a server component that resolves the retailer via getSession, redirects to / when missing, calls buildCartResponse directly (in-process - same justification as the home page), and renders a header summary plus the <CartView /> client component with the initial cart as a prop. components/CartView.tsx is a client component that holds the cart in local state, exposes a Remove button per line (DELETE /api/cart/items/[medicineId] - response payload replaces state in one go), and a sticky-footer Place Order button (POST /api/orders - on success router.push('/dashboard/orders?status=active') + router.refresh() so the orders tab re-reads from the server). Empty-state when itemCount is 0 (illustrated CTA back to /dashboard/home). Per-distributor sections render the items grouped, with a per-group subtotal and a sticky grand-total + Place Order pill at the bottom (positioned above the bottom tab bar).",
+  "tests": [
+    {
+      "description": "<CartView /> renders the empty-state when itemCount is 0.",
+      "code": "import { describe, expect, it, vi } from \"vitest\";\nimport { renderToStaticMarkup } from \"react-dom/server\";\n\nvi.mock(\"next/navigation\", () => ({ useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }) }));\n\nimport { CartView } from \"./CartView\";\n\ndescribe(\"<CartView />\", () => {\n  it(\"renders the empty-state with the Browse medicines CTA when the cart is empty\", () => {\n    const html = renderToStaticMarkup(\n      <CartView initialCart={{ groups: [], grandTotalPaise: 0, itemCount: 0 }} />,\n    );\n    expect(html).toContain(\"Your cart is empty\");\n    expect(html).toContain(\"Browse medicines\");\n    expect(html).toContain('href=\"/dashboard/home\"');\n  });\n});\n"
+    },
+    {
+      "description": "<CartView /> renders distributor groups, per-line totals, and the sticky grand-total Place Order button.",
+      "code": "import { describe, expect, it, vi } from \"vitest\";\nimport { renderToStaticMarkup } from \"react-dom/server\";\n\nvi.mock(\"next/navigation\", () => ({ useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }) }));\n\nimport { CartView } from \"./CartView\";\n\ndescribe(\"<CartView /> grouped state\", () => {\n  it(\"renders distributor heading, per-line totals, and the Place order pill\", () => {\n    const html = renderToStaticMarkup(\n      <CartView\n        initialCart={{\n          groups: [\n            {\n              distributor: { id: \"d-mediplus\", name: \"MediPlus Distributors\" },\n              items: [\n                { medicineId: \"m-paracetamol-500\", name: \"Paracetamol 500mg\", brand: \"Crocin\", qty: 2, unitPricePaise: 2200, lineTotalPaise: 4400 },\n              ],\n              subtotalPaise: 4400,\n            },\n          ],\n          grandTotalPaise: 4400,\n          itemCount: 2,\n        }}\n      />,\n    );\n    expect(html).toContain(\"MediPlus Distributors\");\n    expect(html).toContain(\"Paracetamol 500mg\");\n    expect(html).toContain(\"Remove\");\n    expect(html).toContain(\"Place order (2)\");\n    expect(html).toContain(\"\\u20B944.00\");\n  });\n});\n"
+    }
+  ],
+  "notes": [
+    "The page reads the cart server-side via buildCartResponse so the first paint is fully populated; the client component hydrates that state and only mutates via the documented endpoints. No initial spinner.",
+    "On Place Order success the client both router.pushes and router.refreshes - push moves to /dashboard/orders, refresh re-runs the server component there so the new orders show up without an F5.",
+    "The sticky footer (grand total + Place order) sits at bottom-16 (above the bottom tab bar's 16-unit height) so the Place order button never overlaps the navigation."
+  ]
+}

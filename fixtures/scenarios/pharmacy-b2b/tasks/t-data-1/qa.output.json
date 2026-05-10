@@ -1,0 +1,81 @@
+{
+  "taskId": "t-data-1",
+  "testPlan": [
+    "Verify the file set covers the data spine: lib/types.ts (shared types + helpers), lib/db/store.ts (in-memory tables, public read/write API, seed).",
+    "Verify lib/types.ts exposes every interface the CTO databaseSchema implies (Retailer, Distributor, Medicine, Offer, CartItem, Order, OrderItem, OutstandingPayment) and the supporting OrderStatus union + ACTIVE_STATUSES / CLOSED_STATUSES / STATUS_LABELS lookups.",
+    "Verify the OrderStatus taxonomy is exhaustive: every status appears in either ACTIVE_STATUSES or CLOSED_STATUSES (not both, not neither) and has a STATUS_LABELS entry.",
+    "Verify paiseToRupees handles zero, normal values, large values (Indian grouping 1,23,45,678), negatives.",
+    "Verify lib/db/store.ts seeds 1 retailer, 4 distributors, 20 medicines (5 per distributor), 3 offers, 2 outstanding rows, 2 pre-existing orders (one active, one closed).",
+    "Verify the pilot retailer license number is MH-RP-2024-7821 (matches the t-shell-1 login default).",
+    "Verify findRetailerByLicense is case-insensitive (the login handler doesn't normalise case before lookup).",
+    "Verify searchMedicines is case-insensitive over name + brand + generic and that an empty query returns the full catalogue (used by the search results page when q is missing).",
+    "Verify addCartItem is idempotent on (retailerId, medicineId): a second call with qty=N adds to the existing line rather than creating a duplicate row.",
+    "Verify createOrdersFromCart fans out one Order per distinct distributorId, copies CartItem rows into OrderItem rows with frozen unit prices, totals match across both, and the cart is cleared atomically on success.",
+    "Verify the seed-guard symbol prevents double-seeding under Next's hot reload (Symbol.for + globalThis flag).",
+    "Search files[].content for forbidden placeholder strings (TODO, FIXME, XXX, 'not implemented')."
+  ],
+  "results": [
+    {
+      "test": "File set covers the data spine.",
+      "status": "pass",
+      "details": "lib/types.ts (~3.2 KB), lib/db/store.ts (~12 KB). Both repo-relative, forward-slashed."
+    },
+    {
+      "test": "lib/types.ts ships every interface the CTO databaseSchema implies.",
+      "status": "pass",
+      "details": "Retailer (11 fields), Distributor (8), Medicine (12 incl. distributorId fk + paise integers), Offer (8), CartItem (7 incl. distributorId denorm), Order (8), OrderItem (6), OutstandingPayment (5). Plus the OrderStatus / OrderStatusGroup unions, ACTIVE_STATUSES / CLOSED_STATUSES Sets, and STATUS_LABELS map."
+    },
+    {
+      "test": "OrderStatus taxonomy is exhaustive and disjoint.",
+      "status": "pass",
+      "details": "ACTIVE_STATUSES = {placed, acknowledged, out_for_delivery}. CLOSED_STATUSES = {delivered, cancelled}. Union covers every OrderStatus exactly once. Co-located vitest asserts (a) for every status, (inActive XOR inClosed), and (b) STATUS_LABELS has an entry."
+    },
+    {
+      "test": "paiseToRupees output shape.",
+      "status": "pass",
+      "details": "0 -> Rs.0.00; 1234567 -> Rs.12,345.67 (Indian grouping); 100000000 -> Rs.10,00,000.00; -150 -> -Rs.1.50. Test assertions use \\u20B9 (rupee sign) literal so they survive JSON escaping. Decimal pad always 2 digits."
+    },
+    {
+      "test": "Seed populates all the documented rows.",
+      "status": "pass",
+      "details": "After import: retailers=1 (r-pilot-1), distributors=4 (d-mediplus, d-omsai, d-aakash, d-pharmacare), medicines=20 (5 per distributor), offers=3 (o-1, o-2, o-3), outstanding=2 (op-1=Rs.14,250 + op-2=Rs.8,750), orders=2 (ord-seed-1 active out_for_delivery, ord-seed-2 closed delivered). Pilot favourites = [m-paracetamol-500, m-pantoprazole-40, m-vitd3-60k]."
+    },
+    {
+      "test": "Pilot license number matches the t-shell-1 login default.",
+      "status": "pass",
+      "details": "Seeded license = 'MH-RP-2024-7821'. t-shell-1 app/page.tsx pre-fills the same string. Cross-task contract preserved."
+    },
+    {
+      "test": "findRetailerByLicense is case-insensitive.",
+      "status": "pass",
+      "details": "Implementation: r.licenseNumber.toLowerCase() === licenseNumber.toLowerCase(). Co-located vitest covers both 'MH-RP-2024-7821' and 'mh-rp-2024-7821'. Important because the login handler does NOT pre-normalise case."
+    },
+    {
+      "test": "searchMedicines is case-insensitive and returns all rows on empty.",
+      "status": "pass",
+      "details": "q.trim().toLowerCase() applied; empty q short-circuits to the full catalogue sorted by name. Substring match across name + brand + genericName so 'paracet' / 'crocin' / 'acetaminophen' all hit m-paracetamol-500."
+    },
+    {
+      "test": "addCartItem is idempotent on (retailerId, medicineId).",
+      "status": "pass",
+      "details": "Map key = `${retailerId}|${medicineId}`. existing.qty += qty when present; otherwise new CartItem with distributorId denormalised from the medicine. Test: 1 + 2 -> single line with qty 3."
+    },
+    {
+      "test": "createOrdersFromCart fan-out invariants.",
+      "status": "pass",
+      "details": "Groups cart items by distributorId, creates one Order per group with totalPaise = sum(qty * unitPricePaise) and itemCount = sum(qty). OrderItem rows are deep-copied with frozen unitPricePaise + lineTotalPaise. clearCart(retailerId) called at the end, atomically within the synchronous block. Test verifies 3-line cart split across d-mediplus + d-omsai produces 2 orders, totals match across Order.totalPaise vs sum(OrderItem.lineTotalPaise), cart is empty after."
+    },
+    {
+      "test": "Seed-guard prevents double-seeding under hot reload.",
+      "status": "pass",
+      "details": "const SEEDED = Symbol.for('pharmacy-b2b.store.seeded'); if (!globalThis[SEEDED]) { seed(); globalThis[SEEDED] = true; }. Symbol.for is process-wide, so re-importing store.ts via Next's hot module reload does not re-seed and double-count rows."
+    },
+    {
+      "test": "No forbidden placeholder strings.",
+      "status": "pass",
+      "details": "Scanned both files for TODO, FIXME, XXX, 'not implemented'. Zero matches."
+    }
+  ],
+  "bugs": [],
+  "decision": "PASS"
+}

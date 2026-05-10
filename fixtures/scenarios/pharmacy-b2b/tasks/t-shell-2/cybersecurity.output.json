@@ -1,0 +1,24 @@
+{
+  "taskId": "t-shell-2",
+  "summary": "Audited the mock auth surface: session helper, login + logout handlers, project-root middleware, the authenticated dashboard layout, the dashboard index redirect, and the bottom tab bar. The change introduces a single in-process auth state (a cookie carrying the retailerId verbatim) and a middleware that gates /dashboard/* and /api/* (except /api/auth/login). No critical or high-severity vulnerabilities were found. Two medium-severity items (unsigned cookie + missing rate-limit on login) and one low-severity item (no CSP) are recorded; all are documented as cycle-2 hardening per the CTO risks list and do not block proceed for the pilot.",
+  "vulnerabilities": [
+    {
+      "severity": "medium",
+      "description": "lib/auth/session.ts and the login handler set the pharmacy-session cookie to the retailer.id verbatim with NO signing or HMAC. Any actor who can write a cookie on the same eTLD+1 (e.g. via a sibling subdomain or a downstream proxy that forwards Set-Cookie carelessly) can impersonate any retailer simply by guessing/observing a valid retailer id. The CTO architecture lists this as the documented cycle-1 trade-off, but it is the single biggest production blocker in the change set.",
+      "recommendation": "Cycle 2 must replace the raw retailerId with either (a) a signed cookie using next-auth or @oslojs/jwt with a server-side secret, or (b) a server-side session table keyed by an opaque token. Pair with HttpOnly (already set), Secure, SameSite=Strict, and a rotating signing secret."
+    },
+    {
+      "severity": "medium",
+      "description": "POST /api/auth/login has no rate limit and no lockout. An attacker can iterate license numbers (small, structured space: state-RP-year-serial) at network speed to enumerate valid retailers. The 404 response on unknown license also leaks which licenses exist; combined with the unsigned cookie this is enumerate-then-impersonate.",
+      "recommendation": "Cycle 2 hardening: add an IP+license rate limit (e.g. 5 attempts / 15 minutes via Vercel Edge Config or upstash/ratelimit) and switch the response to a generic 'invalid credentials' so the 404 vs 200 oracle disappears. Optionally add a CAPTCHA after 3 failed attempts."
+    },
+    {
+      "severity": "low",
+      "description": "next.config.mjs is unchanged from t-shell-1 and still does not declare a CSP / HSTS / X-Frame-Options / Referrer-Policy / Permissions-Policy header. Now that the dashboard renders authenticated content, the absence of X-Frame-Options DENY (or CSP frame-ancestors 'none') means a malicious site can iframe /dashboard/* and clickjack a logged-in retailer.",
+      "recommendation": "Add a `headers()` block to next.config.mjs in a follow-up task: CSP `default-src 'self'`, X-Frame-Options DENY, Referrer-Policy strict-origin-when-cross-origin, Permissions-Policy with camera/microphone/geolocation off, and HSTS max-age 63072000 includeSubDomains. This is genuinely small (~15 lines) and worth a dedicated cycle-2 hardening task."
+    }
+  ],
+  "promptInjectionRisk": "None. No file in the change set issues an LLM call, performs LLM-mediated I/O, renders untrusted text as raw HTML, or executes shell or filesystem operations. The login handler reads a single string (licenseNumber) and uses it only as a Map key inside the in-memory store. The middleware reads a single cookie value and uses it only to gate the next response.",
+  "decision": "GO",
+  "requiredFixes": []
+}

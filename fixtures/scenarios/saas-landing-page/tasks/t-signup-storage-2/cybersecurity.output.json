@@ -1,0 +1,19 @@
+{
+  "taskId": "t-signup-storage-2",
+  "summary": "Audited the new Next.js Route Handler at app/api/signup/route.ts and the storage adapter at lib/db/client.ts. The change introduces ONE public POST endpoint with email-shape validation, case-insensitive dedup, and a 400 path on malformed input. There is no authentication, no SQL string-building (in-memory adapter holds typed objects), and no LLM-mediated I/O. Two medium concerns are documented: the missing IP-based rate limit (already flagged by the CTO and explicitly deferred by the developer notes) and the open-by-default email shape (acceptable for an MVP signup but worth tightening before launch). No critical or high vulnerabilities. Decision: GO.",
+  "vulnerabilities": [
+    {
+      "severity": "medium",
+      "description": "POST /api/signup has no rate limiting. An attacker could enumerate or stuff the in-memory store with a high-throughput script, exhausting memory or filling the future Postgres table with garbage signups. The CTO's risks list called this out explicitly ('/api/signup is intentionally public; needs IP-based rate limiting (e.g. 5 req/min) before launch') and the developer notes recommend a follow-up task. Acceptable for the validate-phase demo; NOT acceptable before flipping production DNS.",
+      "recommendation": "Block production launch on a follow-up task: add IP-based rate limiting (5 req/min per IP, sliding window) at either edge (Vercel WAF / Cloudflare) or middleware (Next.js middleware.ts). Pair with a server-side maximum-store-size guard so a runaway client cannot OOM the in-memory adapter."
+    },
+    {
+      "severity": "medium",
+      "description": "EMAIL_RE = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/ accepts shapes that pass syntactic checks but are unlikely to be deliverable (e.g. 'a@b.c'). For a signup waitlist this lets attackers seed the store with non-deliverable addresses, eroding the OKR's 'verified email signups' metric.",
+      "recommendation": "Add a lightweight deliverability check before launch — either a confirmation-email loop (insert as 'pending', flip to 'queued' on click) or an MX-record check via a vetted package. Both are larger changes; documenting as a deferred risk is appropriate for this delivery."
+    }
+  ],
+  "promptInjectionRisk": "None. The route handler accepts only structured JSON ({ email, source }), validates email against a regex, and stores both fields as typed values in a Map keyed by lowercased email. No string is ever passed to an LLM, no shell command is constructed, no template is rendered with the input, and no eval-equivalent is used. The handler does not read or write any filesystem path. The downstream consumer (the landing page UI in t-landing-page-3) likewise treats the response as structured JSON, not as anything renderable by an LLM. The injection surface introduced by this task is zero.",
+  "decision": "GO",
+  "requiredFixes": []
+}

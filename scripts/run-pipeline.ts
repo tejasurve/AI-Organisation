@@ -31,7 +31,7 @@
 //   1 = pipeline ran cleanly but did not write files (gate blocked or no tasks)
 //   2 = misuse / runtime error (bad args, missing scenario, LLM failure, …)
 
-import { mkdir, readFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, isAbsolute, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -45,6 +45,9 @@ import {
 import { AnthropicLLMClient } from "../lib/runtime/llm-clients/anthropic.ts";
 import { OpenAILLMClient } from "../lib/runtime/llm-clients/openai.ts";
 import { runPipeline, type PipelineResult } from "../lib/runtime/pipeline.ts";
+import { formatReportMarkdown } from "../lib/runtime/report.ts";
+import { formatReportPdf } from "../lib/runtime/report-pdf.ts";
+import { TaskRoutingRunner } from "../lib/runtime/task-routing-runner.ts";
 import { AGENT_NAMES } from "../lib/runtime/types.ts";
 import { colors as c, consoleLogger, noopLogger } from "../lib/runtime/logger.ts";
 
@@ -55,6 +58,7 @@ interface CLIArgs {
   scenario?: string;
   out?: string;
   idea?: string;
+  task?: string;
   json: boolean;
   quiet: boolean;
   verbose: boolean;
@@ -95,7 +99,19 @@ if (args.runner === "fixture") {
   } catch (e) {
     fail((e as Error).message);
   }
-  runner = fixtureRunner;
+  if (args.task) {
+    // Wrap with TaskRoutingRunner so the pipeline runs the chosen EM task
+    // (and reads developer/qa/cybersecurity overrides from
+    // <scenarioDir>/tasks/<id>/ when present). The pipeline itself stays
+    // untouched — TaskRoutingRunner is pure composition.
+    runner = new TaskRoutingRunner({
+      inner: fixtureRunner,
+      scenarioDir,
+      targetTaskId: args.task,
+    });
+  } else {
+    runner = fixtureRunner;
+  }
 
   if (!args.quiet && !args.json) {
     console.log(c.bold(c.cyan("Pipeline run (fixture)")));
@@ -168,10 +184,30 @@ try {
   fail(`pipeline crashed: ${(e as Error).message}`);
 }
 
+// Persist Markdown + PDF run reports so every invocation leaves behind a
+// self-contained, human-readable record alongside (or instead of) the
+// generated code.
+//   - WROTE_FILES → next to the code at generated/{taskId}/REPORT.{md,pdf}
+//   - anything else → audit trail at generated/_runs/{ISO-stamp}/REPORT.{md,pdf}
+//
+// PDF generation is best-effort: a failure (corrupt PDFKit state, fs error,
+// etc.) is logged on stderr but does not fail the pipeline run, since the
+// Markdown report is the primary record.
+const reports = await persistReports(result, outDir);
+
 if (args.json) {
   console.log(JSON.stringify(toSerialisable(result), null, 2));
 } else {
   printSummary(result);
+  if (reports.markdownPath || reports.pdfPath) {
+    console.log("");
+    console.log(c.bold("Reports"));
+    if (reports.markdownPath) console.log(`  markdown: ${reports.markdownPath}`);
+    if (reports.pdfPath) console.log(`  pdf:      ${reports.pdfPath}`);
+    if (reports.pdfError) {
+      console.log(`  ${c.yellow("pdf failed:")} ${reports.pdfError}`);
+    }
+  }
 }
 
 process.exit(exitCodeFor(result.decision));
@@ -201,6 +237,9 @@ function parseArgs(argv: readonly string[]): CLIArgs {
         break;
       case "--idea":
         out.idea = requireValue(a, argv[++i]);
+        break;
+      case "--task":
+        out.task = requireValue(a, argv[++i]);
         break;
       case "--json":
         out.json = true;
@@ -246,6 +285,51 @@ function providerStatus(): string {
   parts.push(process.env.ANTHROPIC_API_KEY ? `anthropic=${c.green("on")}` : `anthropic=${c.dim("off")}`);
   parts.push(process.env.OPENAI_API_KEY ? `openai=${c.green("on")}` : `openai=${c.dim("off")}`);
   return parts.join(" ");
+}
+
+interface PersistedReports {
+  markdownPath: string | null;
+  pdfPath: string | null;
+  pdfError: string | null;
+}
+
+async function persistReports(r: PipelineResult, generatedRoot: string): Promise<PersistedReports> {
+  const md = formatReportMarkdown(r);
+  let dir: string;
+  if (r.decision === "WROTE_FILES" && r.selectedTask) {
+    dir = resolve(generatedRoot, r.selectedTask.id);
+  } else {
+    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+    dir = resolve(generatedRoot, "_runs", stamp);
+  }
+
+  let markdownPath: string | null = null;
+  let pdfPath: string | null = null;
+  let pdfError: string | null = null;
+
+  try {
+    await mkdir(dir, { recursive: true });
+    markdownPath = resolve(dir, "REPORT.md");
+    await writeFile(markdownPath, md, "utf-8");
+  } catch (e) {
+    // Don't fail the whole run if Markdown report-writing fails; surface it on stderr.
+    console.error(c.red(`run-pipeline: failed to write REPORT.md: ${(e as Error).message}`));
+    markdownPath = null;
+  }
+
+  // PDF is best-effort. The Markdown report is the source of truth; if PDF
+  // generation throws we still want the rest of the pipeline result to land.
+  try {
+    const pdfBuffer = await formatReportPdf(r);
+    pdfPath = resolve(dir, "REPORT.pdf");
+    await writeFile(pdfPath, pdfBuffer);
+  } catch (e) {
+    pdfError = (e as Error).message;
+    console.error(c.red(`run-pipeline: failed to write REPORT.pdf: ${pdfError}`));
+    pdfPath = null;
+  }
+
+  return { markdownPath, pdfPath, pdfError };
 }
 
 function absUnder(p: string, base: string): string {
@@ -297,6 +381,11 @@ function printUsage(code: number): never {
   console.error("  --scenario <dir>   Required. Path to a fixture directory containing");
   console.error("                     {ceo,cto,engineering-manager,developer,qa,cybersecurity}.output.json");
   console.error("                     and idea.txt.");
+  console.error("  --task <id>        (optional) Pin the pipeline to a specific EM task id.");
+  console.error("                     Reorders engineering-manager output so the chosen task");
+  console.error("                     runs, and reads developer/qa/cybersecurity overrides");
+  console.error("                     from <scenario>/tasks/<id>/<agent>.output.json when present.");
+  console.error("                     Pipeline itself is NOT modified \u2014 this is pure CLI composition.");
   console.error("");
   console.error("LLM mode:");
   console.error("  Pluggable LLMClient architecture: AnthropicLLMClient (claude-* models)");
@@ -309,6 +398,8 @@ function printUsage(code: number): never {
   console.error("");
   console.error("Examples:");
   console.error("  node scripts/run-pipeline.ts --scenario fixtures/scenarios/waitlist-mvp");
+  console.error("  node scripts/run-pipeline.ts --scenario fixtures/scenarios/saas-landing-page \\");
+  console.error("                                --task t-signup-storage-2");
   console.error("  ANTHROPIC_API_KEY=... OPENAI_API_KEY=... \\");
   console.error("    node scripts/run-pipeline.ts --runner llm --idea \"build me a waitlist app\"");
   process.exit(code);

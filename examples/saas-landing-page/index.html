@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dranzer — managed AI organisation as a service</title>
+    <meta
+      name="description"
+      content="Submit an idea. An AI org of CEO, CTO, EM, Devs, QA and Security turns it into shipped code, end to end."
+    />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: [
+                "Inter",
+                "ui-sans-serif",
+                "system-ui",
+                "-apple-system",
+                "Segoe UI",
+                "sans-serif",
+              ],
+            },
+          },
+        },
+      };
+    </script>
+    <link
+      rel="preconnect"
+      href="https://fonts.googleapis.com"
+    />
+    <link
+      rel="preconnect"
+      href="https://fonts.gstatic.com"
+      crossorigin
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        font-family: "Inter", system-ui, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      .bg-grid {
+        background-image: radial-gradient(
+          circle at 1px 1px,
+          rgba(99, 102, 241, 0.12) 1px,
+          transparent 0
+        );
+        background-size: 24px 24px;
+      }
+      .gradient-text {
+        background: linear-gradient(
+          90deg,
+          #4f46e5 0%,
+          #7c3aed 50%,
+          #ec4899 100%
+        );
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+    </style>
+  </head>
+  <body class="bg-white text-slate-900">
+    <!-- Top nav -->
+    <header class="border-b border-slate-200/60 bg-white/80 backdrop-blur sticky top-0 z-10">
+      <div class="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+        <a href="/" class="flex items-center gap-2 font-bold text-lg">
+          <span class="inline-flex h-7 w-7 items-center justify-center rounded-md bg-indigo-600 text-white text-sm">P</span>
+          <span>Dranzer</span>
+        </a>
+        <nav class="hidden md:flex items-center gap-8 text-sm text-slate-600">
+          <a href="#how" class="hover:text-slate-900">How it works</a>
+          <a href="#features" class="hover:text-slate-900">Features</a>
+          <a href="#signup" class="hover:text-slate-900">Get access</a>
+        </nav>
+        <a
+          href="#signup"
+          class="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
+        >
+          Join waitlist
+        </a>
+      </div>
+    </header>
+
+    <!-- Hero -->
+    <section class="bg-grid">
+      <div class="mx-auto max-w-6xl px-6 pt-20 pb-24 text-center">
+        <span class="inline-flex items-center gap-2 rounded-full border border-indigo-100 bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700">
+          <span class="inline-block h-1.5 w-1.5 rounded-full bg-indigo-600 animate-pulse"></span>
+          Now in private alpha
+        </span>
+        <h1 class="mt-6 text-5xl md:text-6xl font-extrabold tracking-tight">
+          An entire engineering team.
+          <br />
+          <span class="gradient-text">Powered by AI.</span>
+        </h1>
+        <p class="mx-auto mt-6 max-w-2xl text-lg text-slate-600">
+          Submit an idea. An AI organisation — CEO, CTO, Engineering Manager, Developers, QA, and Cybersecurity — turns it into shipped, audited, runnable code. End to end. No prompts to babysit.
+        </p>
+        <div class="mt-10 flex flex-col sm:flex-row items-center justify-center gap-3">
+          <a
+            href="#signup"
+            class="rounded-md bg-indigo-600 px-6 py-3 text-base font-semibold text-white shadow-sm hover:bg-indigo-500"
+          >
+            Get early access
+          </a>
+          <a
+            href="#how"
+            class="rounded-md px-6 py-3 text-base font-semibold text-slate-700 hover:text-slate-900"
+          >
+            See how it works →
+          </a>
+        </div>
+        <p class="mt-6 text-xs text-slate-500">
+          Used by indie founders to go from idea to deployed prototype in under a week.
+        </p>
+      </div>
+    </section>
+
+    <!-- Features -->
+    <section id="features" class="border-t border-slate-100">
+      <div class="mx-auto max-w-6xl px-6 py-20">
+        <div class="mx-auto max-w-2xl text-center">
+          <h2 class="text-3xl font-bold tracking-tight">
+            A real org, not a single chat window.
+          </h2>
+          <p class="mt-4 text-slate-600">
+            Each agent has a defined role, model, and structured handoff schema. Outputs are gated by automated QA and security audits before any code is written to disk.
+          </p>
+        </div>
+
+        <div class="mt-14 grid gap-8 md:grid-cols-3">
+          <!-- Feature 1 -->
+          <div class="rounded-xl border border-slate-200 p-6 hover:shadow-md transition-shadow">
+            <div class="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600">
+              <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 7l9-4 9 4-9 4-9-4z M3 12l9 4 9-4 M3 17l9 4 9-4" />
+              </svg>
+            </div>
+            <h3 class="text-lg font-semibold">Strategic thinking, baked in</h3>
+            <p class="mt-2 text-sm text-slate-600">
+              CEO and CTO agents define mission, OKRs, architecture, API contracts, and database schema before a single line of code is written.
+            </p>
+          </div>
+
+          <!-- Feature 2 -->
+          <div class="rounded-xl border border-slate-200 p-6 hover:shadow-md transition-shadow">
+            <div class="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-violet-100 text-violet-600">
+              <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+              </svg>
+            </div>
+            <h3 class="text-lg font-semibold">Atomic, auditable execution</h3>
+            <p class="mt-2 text-sm text-slate-600">
+              The Engineering Manager breaks work into 1–4 hour tasks. Each is validated, executed by a developer agent, gated by QA + Security, then written to disk only on a clean PASS + GO.
+            </p>
+          </div>
+
+          <!-- Feature 3 -->
+          <div class="rounded-xl border border-slate-200 p-6 hover:shadow-md transition-shadow">
+            <div class="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-lg bg-pink-100 text-pink-600">
+              <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <h3 class="text-lg font-semibold">Self-contained run reports</h3>
+            <p class="mt-2 text-sm text-slate-600">
+              Every run leaves a Markdown <code class="font-mono text-xs bg-slate-100 px-1 py-0.5 rounded">REPORT.md</code> next to the generated code: full agent JSON, decisions, file list, and an end-to-end verification result.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- How it works -->
+    <section id="how" class="bg-slate-50 border-t border-slate-100">
+      <div class="mx-auto max-w-6xl px-6 py-20">
+        <div class="mx-auto max-w-2xl text-center">
+          <h2 class="text-3xl font-bold tracking-tight">From idea to running code in 9 steps.</h2>
+          <p class="mt-4 text-slate-600">
+            One pipeline. Real models. Strict JSON handoffs at every boundary.
+          </p>
+        </div>
+        <ol class="mt-12 grid gap-3 md:grid-cols-3 text-sm">
+          <li class="rounded-lg bg-white p-4 border border-slate-200">
+            <span class="font-mono text-xs text-indigo-600">01 → CEO</span>
+            <p class="mt-1 text-slate-700">Mission, OKRs, priorities, delegation.</p>
+          </li>
+          <li class="rounded-lg bg-white p-4 border border-slate-200">
+            <span class="font-mono text-xs text-indigo-600">02 → CTO</span>
+            <p class="mt-1 text-slate-700">Architecture, API contracts, DB schema, risks.</p>
+          </li>
+          <li class="rounded-lg bg-white p-4 border border-slate-200">
+            <span class="font-mono text-xs text-indigo-600">03 → Engineering Manager</span>
+            <p class="mt-1 text-slate-700">Features &amp; atomic 1–4h tasks.</p>
+          </li>
+          <li class="rounded-lg bg-white p-4 border border-slate-200">
+            <span class="font-mono text-xs text-indigo-600">04 → Validation</span>
+            <p class="mt-1 text-slate-700">Schema + cross-array integrity rules.</p>
+          </li>
+          <li class="rounded-lg bg-white p-4 border border-slate-200">
+            <span class="font-mono text-xs text-indigo-600">05 → Task selection</span>
+            <p class="mt-1 text-slate-700">Pick the next developer task.</p>
+          </li>
+          <li class="rounded-lg bg-white p-4 border border-slate-200">
+            <span class="font-mono text-xs text-indigo-600">06 → Developer</span>
+            <p class="mt-1 text-slate-700">Files + tests + implementation plan.</p>
+          </li>
+          <li class="rounded-lg bg-white p-4 border border-slate-200">
+            <span class="font-mono text-xs text-indigo-600">07 → QA</span>
+            <p class="mt-1 text-slate-700">Test plan, results, decision: PASS / FAIL / CONDITIONAL.</p>
+          </li>
+          <li class="rounded-lg bg-white p-4 border border-slate-200">
+            <span class="font-mono text-xs text-indigo-600">08 → Cybersecurity</span>
+            <p class="mt-1 text-slate-700">Vulns, prompt-injection risk, GO / NO_GO.</p>
+          </li>
+          <li class="rounded-lg bg-white p-4 border border-slate-200">
+            <span class="font-mono text-xs text-indigo-600">09 → File writer</span>
+            <p class="mt-1 text-slate-700">Writes <code class="font-mono text-xs">generated/{taskId}/</code> on PASS + GO.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- Signup -->
+    <section id="signup" class="border-t border-slate-100">
+      <div class="mx-auto max-w-2xl px-6 py-24 text-center">
+        <h2 class="text-3xl md:text-4xl font-bold tracking-tight">
+          Join the early access list.
+        </h2>
+        <p class="mt-4 text-slate-600">
+          We're onboarding indie founders one at a time. Drop your email and we'll be in touch the moment a slot opens up.
+        </p>
+
+        <form
+          id="signup-form"
+          class="mt-10 flex flex-col sm:flex-row gap-3 max-w-md mx-auto"
+          novalidate
+        >
+          <input
+            id="email"
+            name="email"
+            type="email"
+            required
+            autocomplete="email"
+            placeholder="you@startup.com"
+            class="flex-1 rounded-md border border-slate-300 px-4 py-3 text-base shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
+          />
+          <button
+            id="submit"
+            type="submit"
+            class="rounded-md bg-indigo-600 px-6 py-3 text-base font-semibold text-white shadow-sm hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Get access
+          </button>
+        </form>
+
+        <!-- Status messages: empty → loading → success / error -->
+        <div id="status" class="mt-6 min-h-[2rem] text-sm"></div>
+
+        <p class="mt-8 text-xs text-slate-500">
+          We'll only use your email to send a single onboarding message. No marketing, no sharing.
+        </p>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-100">
+      <div class="mx-auto max-w-6xl px-6 py-10 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-slate-500">
+        <div class="flex items-center gap-2">
+          <span class="inline-flex h-5 w-5 items-center justify-center rounded bg-indigo-600 text-white text-[10px] font-bold">P</span>
+          <span>© 2026 Dranzer. All rights reserved.</span>
+        </div>
+        <div class="flex items-center gap-5">
+          <a href="#" class="hover:text-slate-700">Privacy</a>
+          <a href="#" class="hover:text-slate-700">Terms</a>
+          <a href="#" class="hover:text-slate-700">Contact</a>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      (function () {
+        const form = document.getElementById("signup-form");
+        const emailInput = document.getElementById("email");
+        const submitBtn = document.getElementById("submit");
+        const statusEl = document.getElementById("status");
+
+        const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        function setStatus(html, kind) {
+          const colors = {
+            error: "text-red-600",
+            success: "text-emerald-600",
+            info: "text-slate-600",
+          };
+          statusEl.className = "mt-6 min-h-[2rem] text-sm " + (colors[kind] || colors.info);
+          statusEl.innerHTML = html;
+        }
+
+        form.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const email = emailInput.value.trim();
+          if (!EMAIL_RE.test(email)) {
+            setStatus("That doesn't look like a valid email — try again.", "error");
+            emailInput.focus();
+            return;
+          }
+
+          submitBtn.disabled = true;
+          setStatus(
+            '<span class="inline-flex items-center gap-2"><svg class="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>Sending you a slot…</span>',
+            "info",
+          );
+
+          try {
+            const res = await fetch("/api/signup", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ email, source: "landing-v1" }),
+            });
+            const data = await res.json().catch(() => ({}));
+
+            if (res.ok && data.status === "queued") {
+              setStatus(
+                "Thanks — you're on the list. We'll be in touch from <strong>hello@Dranzer.dev</strong>.",
+                "success",
+              );
+              form.reset();
+              emailInput.disabled = true;
+              submitBtn.textContent = "You're in";
+            } else if (res.ok && data.status === "duplicate") {
+              setStatus(
+                "Looks like you're already on the list — we'll be in touch soon.",
+                "success",
+              );
+              emailInput.disabled = true;
+              submitBtn.textContent = "Already on the list";
+            } else {
+              setStatus(
+                (data && data.error) || "Something went wrong. Please try again.",
+                "error",
+              );
+              submitBtn.disabled = false;
+            }
+          } catch (err) {
+            setStatus(
+              "We couldn't reach the server. Check your connection and try again.",
+              "error",
+            );
+            submitBtn.disabled = false;
+          }
+        });
+      })();
+    </script>
+  </body>
+</html>

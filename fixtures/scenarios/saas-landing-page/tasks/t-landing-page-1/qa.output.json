@@ -1,0 +1,57 @@
+{
+  "taskId": "t-landing-page-1",
+  "testPlan": [
+    "Verify the file set covers every config a Next.js 14 App Router project needs to boot: package.json, next.config.mjs, tsconfig.json, tailwind.config.ts, postcss.config.mjs, app/layout.tsx, app/globals.css, plus the standard next-env.d.ts.",
+    "Verify package.json declares Next 14, React 18, Tailwind 3, drizzle-orm runtime, and matches the CTO architecture exactly.",
+    "Verify tsconfig.json maps @/* → ./* (so the route handler from t-signup-storage-2 can import @/lib/db/client) and uses bundler resolution + strict mode.",
+    "Verify tailwind config scans app/ for class names so the UI task's classes will be compiled.",
+    "Verify the root layout is minimal (no nav, no header, no footer) — UI ownership belongs to the page task.",
+    "Verify globals.css imports the three Tailwind layers in order.",
+    "Verify next-env.d.ts is shipped with the canonical contents.",
+    "Search files[].content for forbidden placeholder strings."
+  ],
+  "results": [
+    {
+      "test": "File set covers every config a Next.js 14 App Router project needs to boot.",
+      "status": "pass",
+      "details": "8 files: package.json, next.config.mjs, tsconfig.json, tailwind.config.ts, postcss.config.mjs, next-env.d.ts, app/layout.tsx, app/globals.css. Matches the standard `create-next-app --typescript --tailwind --app` output."
+    },
+    {
+      "test": "package.json declares the right deps and matches the CTO architecture.",
+      "status": "pass",
+      "details": "next ^14.2.0, react ^18.3.0, react-dom ^18.3.0, drizzle-orm ^0.44.0 in dependencies. tailwindcss ^3.4.0, typescript ^5.6.0, vitest ^3.2.0, @types/node ^22.0.0 in devDependencies. Scripts: dev, build, start, test."
+    },
+    {
+      "test": "tsconfig.json maps @/* path alias and enables strict + bundler resolution.",
+      "status": "pass",
+      "details": "compilerOptions.paths[\"@/*\"] = [\"./*\"]; strict: true; moduleResolution: \"bundler\"; jsx: \"preserve\"; resolveJsonModule: true. The Next.js TypeScript plugin is registered in plugins[]."
+    },
+    {
+      "test": "tailwind config scans app/ for class names.",
+      "status": "pass",
+      "details": "content: [\"./app/**/*.{ts,tsx}\"]. Will pick up classes used in app/layout.tsx and any future app/page.tsx (t-landing-page-3) and app/api/signup/route.ts (t-signup-storage-2 — though the route handler uses no Tailwind classes)."
+    },
+    {
+      "test": "Root layout is minimal — UI ownership belongs to the page task.",
+      "status": "pass",
+      "details": "app/layout.tsx contains only <html lang=\"en\"><body className=\"...\">{children}</body></html>. No nav, no header, no footer. Imports globals.css. Sets metadata title + description."
+    },
+    {
+      "test": "globals.css imports the three Tailwind layers.",
+      "status": "pass",
+      "details": "Three lines: @tailwind base; @tailwind components; @tailwind utilities. In the canonical order."
+    },
+    {
+      "test": "next-env.d.ts is shipped with canonical contents.",
+      "status": "pass",
+      "details": "Contents match the standard Next.js generation: <reference types=\"next\" /> + <reference types=\"next/image-types/global\" /> + the do-not-edit warning."
+    },
+    {
+      "test": "No forbidden placeholder strings in any file.",
+      "status": "pass",
+      "details": "Scanned all 8 file contents for TODO, FIXME, XXX, 'not implemented'. Zero matches."
+    }
+  ],
+  "bugs": [],
+  "decision": "PASS"
+}

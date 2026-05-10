@@ -1,0 +1,19 @@
+{
+  "taskId": "t-cart-2",
+  "summary": "Audited the Cart tab page + the cart-state client component. The page is a server component that resolves the retailer via the session helper and hydrates a typed cart object into a client component. The client component only ever calls the documented authenticated cart and orders endpoints (DELETE /api/cart/items/[medicineId], POST /api/orders) and renders escaped React text. No critical or high-severity vulnerabilities were found. One low-severity item (server error message reflected inline) is recorded; React's text escaping makes it non-exploitable today.",
+  "vulnerabilities": [
+    {
+      "severity": "low",
+      "description": "<CartView /> renders server.error strings inline in a role='alert' box without scrubbing. If a future server change ever interpolates user input into the error field of /api/cart/items DELETE or /api/orders POST responses (currently impossible - all error strings are hardcoded enum-style messages from t-cart-1 and t-orders-1), it would render as React text. React escapes text content, so this is not currently reachable XSS.",
+      "recommendation": "Pair with the same recommendation from t-home-2: enforce in lib/api/responses.ts that error fields are drawn from a closed enum of safe-to-display strings. Cycle 2 hardening, no urgent action."
+    },
+    {
+      "severity": "low",
+      "description": "encodeURIComponent(medicineId) is used in the DELETE URL, which correctly handles the current id format (m-<slug>) and any future ids that contain reserved URL characters. There is no input from the user here (medicineId comes from the server's cart payload), so injection is not a vector. Recording the design choice for the audit trail.",
+      "recommendation": "No action needed. Continue using encodeURIComponent on any future cart or order URL parameter that includes a server-supplied id."
+    }
+  ],
+  "promptInjectionRisk": "None. No file in the change set issues an LLM call, performs LLM-mediated I/O, renders untrusted text as raw HTML, or executes shell or filesystem operations. All visible strings flow through React text-content interpolation (auto-escaped) or through paiseToRupees (which produces only digits, commas, dot, and the rupee sign).",
+  "decision": "GO",
+  "requiredFixes": []
+}

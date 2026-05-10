@@ -1,0 +1,14 @@
+{
+  "taskId": "t-orders-1",
+  "summary": "Audited the orders endpoint that exports both GET and POST. Both handlers resolve the retailer via the session cookie (never from the body), the ?status query parameter is validated against a closed enum, the POST has no body to validate (it operates on the server-side cart), and the response shapes are typed JSON projections of in-memory rows. No critical or high-severity vulnerabilities were found. One medium-severity item (no rate limit on POST) is recorded; the same risk profile as t-cart-1 / t-shell-2 endpoints.",
+  "vulnerabilities": [
+    {
+      "severity": "medium",
+      "description": "POST /api/orders has no rate limit. An authenticated retailer (or anyone holding the unsigned cookie from t-shell-2) can spam the endpoint to grow the orders Map unboundedly. Each call requires a non-empty cart, but a paired loop of POST /api/cart/items + POST /api/orders + repeat would memory-exhaust a Vercel function instance.",
+      "recommendation": "Cycle 2: pair the order POST with the same per-session rate limiter recommended for the cart endpoints (e.g. 10 orders / minute). Belt-and-braces option: enforce a max-orders-per-day-per-retailer cap (e.g. 200) at createOrdersFromCart and return 429 when exceeded."
+    }
+  ],
+  "promptInjectionRisk": "None. Neither handler issues an LLM call, performs LLM-mediated I/O, renders untrusted text, or executes shell or filesystem operations. The status query parameter is validated against a closed enum before reaching any logic; the POST has no body. All response data flows from typed in-memory rows through NextResponse.json's automatic escaping.",
+  "decision": "GO",
+  "requiredFixes": []
+}

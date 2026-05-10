@@ -1,0 +1,57 @@
+{
+  "taskId": "t-landing-page-3",
+  "testPlan": [
+    "Verify the file path and shape: a single app/page.tsx that opens with \"use client\" and default-exports a HomePage React function component.",
+    "Verify the form submission target matches the CTO contract: POST /api/signup with body { email, source: 'landing-v1' }.",
+    "Verify all three CTO response branches are handled in the UI: queued (success message), duplicate (already-on-list message), error (generic failure message).",
+    "Verify client-side EMAIL_RE matches the server-side regex declared in t-signup-storage-2's route handler (no UX desync).",
+    "Verify visual structure: sticky nav, hero with primary + secondary CTAs, 3-card features grid, 9-item pipeline list, signup form section, footer.",
+    "Verify Tailwind utility classes are used exclusively (no inline style attributes), so the skeleton's tailwind.config.ts content scan picks them up.",
+    "Verify apostrophes in copy are escaped as &apos; per React's no-unescaped-entities rule (next build's default lint).",
+    "Verify the form's loading + locked states (disable input + button while submitting; lock and show 'You're in' on success)."
+  ],
+  "results": [
+    {
+      "test": "File path + shape: app/page.tsx with \"use client\" + default HomePage export.",
+      "status": "pass",
+      "details": "files[0].path = app/page.tsx. File opens with the literal `\"use client\";` directive. Contains `export default function HomePage` per Next.js App Router convention."
+    },
+    {
+      "test": "Form posts to /api/signup with the CTO request shape.",
+      "status": "pass",
+      "details": "fetch(\"/api/signup\", { method: \"POST\", headers: { \"Content-Type\": \"application/json\" }, body: JSON.stringify({ email: trimmed, source: \"landing-v1\" }) }). Matches the CTO contract { email: string, source: string }."
+    },
+    {
+      "test": "All three CTO response branches are handled in the UI.",
+      "status": "pass",
+      "details": "Queued: setState({ kind: 'success', message: 'Thanks — you\\'re on the list...' }). Duplicate: setState({ kind: 'success', message: 'Looks like you\\'re already on the list...' }). Error: setState({ kind: 'error', message: data.error || 'Something went wrong. Please try again.' }). Network failure caught separately with a friendly message."
+    },
+    {
+      "test": "Client-side EMAIL_RE matches the server-side regex.",
+      "status": "pass",
+      "details": "Both files declare: const EMAIL_RE = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/. Byte-for-byte identical. The developer's note 4 explains the deliberate duplication (avoid pulling server-only modules into the client bundle)."
+    },
+    {
+      "test": "Visual structure covers nav + hero + features + pipeline + signup + footer.",
+      "status": "pass",
+      "details": "<header sticky>, <section> hero with `<h1>An entire engineering team. <span>Powered by AI.</span></h1>`, <section id='features'> with FEATURES.map → 3 <article> cards, <section id='how'> with PIPELINE_STEPS.map → 9 <li> items, <section id='signup'> with the form, <footer>. Six discrete page regions."
+    },
+    {
+      "test": "Tailwind utility classes only — no inline style attributes.",
+      "status": "pass",
+      "details": "Test 6 in the developer's vitest file asserts SRC.match(/className=/) is truthy AND SRC.match(/style={{/) is null. Both pass against the file as written."
+    },
+    {
+      "test": "Apostrophes are escaped as &apos; per React's no-unescaped-entities rule.",
+      "status": "pass",
+      "details": "Two visitor-facing strings use apostrophes: 'We&apos;re onboarding indie founders one at a time.' and 'We&apos;ll only use your email...'. Test 8 asserts both. Avoids the lint warning that would surface on `next build`."
+    },
+    {
+      "test": "Form has loading + locked states.",
+      "status": "pass",
+      "details": "submitting = state.kind === 'submitting' and locked = state.kind === 'success'. Both <input> and <button> have `disabled={submitting || locked}`. Button label switches: 'Get access' (idle) → 'Sending…' (submitting) → 'You\\'re in' (locked). UX-correct flow."
+    }
+  ],
+  "bugs": [],
+  "decision": "PASS"
+}

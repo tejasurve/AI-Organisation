@@ -12,4 +12,8 @@ export * from "./json-schema.ts";
 export * from "./llm-client.ts";
 export * from "./logger.ts";
 export * from "./pipeline.ts";
+export * from "./report.ts";
+export * from "./report-pdf.ts";
 export * from "./task-body.ts";
+export * from "./task-routing-runner.ts";
+export * from "./verify-helpers.ts";

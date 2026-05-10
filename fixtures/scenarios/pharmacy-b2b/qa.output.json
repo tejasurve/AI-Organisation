@@ -1,0 +1,74 @@
+{
+  "taskId": "t-shell-1",
+  "testPlan": [
+    "Verify the file set follows the CTO architecture: package.json, tsconfig.json, next.config.mjs, postcss.config.mjs, tailwind.config.ts, next-env.d.ts, app/globals.css, app/layout.tsx, app/page.tsx are all present at the documented paths.",
+    "Verify package.json pins Next 14.2.x, React 18.x, Tailwind 3.x, TypeScript 5.x, and Vitest 1.x as the CTO architecture requires, with the standard dev/build/start/test/typecheck scripts.",
+    "Verify tsconfig.json declares the @/* path alias the CTO contract assumes for shared imports.",
+    "Verify tailwind.config.ts content globs cover app/** and components/** so utility classes are not purged in production.",
+    "Verify app/layout.tsx renders an html/body shell, imports globals.css, and sets a Tailwind background class on body.",
+    "Verify app/page.tsx is a client component (\"use client\" directive) that posts JSON to /api/auth/login with the licenseNumber field name the CTO contract specifies.",
+    "Verify app/page.tsx surfaces the server's error JSON when the response is non-200, and routes to /dashboard via next/navigation router.replace when the response is 200.",
+    "Verify the login page exposes the Welcome heading, the licenseNumber input, the Sign in button, and the pilot-mode footnote that the developer test file keys off.",
+    "Verify no forbidden placeholder strings (TODO, FIXME, XXX, 'not implemented') appear in any file content.",
+    "Verify the developer notes accurately surface the cross-task assumptions: auth handler deferred to t-shell-2, default license matches the t-data-1 seed retailer, next-env.d.ts is shipped verbatim."
+  ],
+  "results": [
+    {
+      "test": "File set matches the architecture (9 files at the documented paths).",
+      "status": "pass",
+      "details": "9 files declared at: package.json, tsconfig.json, next.config.mjs, postcss.config.mjs, tailwind.config.ts, next-env.d.ts, app/globals.css, app/layout.tsx, app/page.tsx. All repo-relative, forward-slashed, no extras."
+    },
+    {
+      "test": "Dependency versions match the CTO architecture pin set.",
+      "status": "pass",
+      "details": "package.json deps: next 14.2.18, react ^18.3.1, react-dom ^18.3.1. devDeps: tailwindcss ^3.4.14, typescript ^5.6.3, vitest ^1.6.1, @types/node ^22.7.5, @types/react ^18.3.12, postcss ^8.4.49, autoprefixer ^10.4.20. All within the major-version contract."
+    },
+    {
+      "test": "package.json exposes the canonical scripts (dev, build, start, test, typecheck, lint).",
+      "status": "pass",
+      "details": "scripts.dev=next dev, scripts.build=next build, scripts.start=next start, scripts.test=vitest run, scripts.typecheck=tsc --noEmit, scripts.lint=next lint. 6 of 6 expected scripts present."
+    },
+    {
+      "test": "tsconfig.json declares the @/* path alias the CTO contract assumes.",
+      "status": "pass",
+      "details": "compilerOptions.baseUrl='.', compilerOptions.paths['@/*']=['./*']. Strict mode is on, jsx is preserve (for Next), moduleResolution is bundler. Aligns with Next 14 + Tailwind defaults."
+    },
+    {
+      "test": "tailwind.config.ts content globs cover app/** and components/**.",
+      "status": "pass",
+      "details": "config.content = ['./app/**/*.{ts,tsx}', './components/**/*.{ts,tsx}']. The brand color extension is sane (50/100/500/600/700/900) and consumed by the login page (bg-brand-600, text-brand-600)."
+    },
+    {
+      "test": "app/layout.tsx renders the html/body shell and imports globals.css.",
+      "status": "pass",
+      "details": "Imports './globals.css', exports default RootLayout returning <html lang='en'><body className='min-h-screen bg-slate-50 ...'>{children}</body></html>. Metadata.title=Pharmacy B2B, viewport set for mobile-first."
+    },
+    {
+      "test": "app/page.tsx is a client component that posts JSON to /api/auth/login with licenseNumber.",
+      "status": "pass",
+      "details": "'use client' directive on line 1. fetch('/api/auth/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ licenseNumber: licenseNumber.trim() }) }). Field name and endpoint exactly match the CTO contract for POST /api/auth/login."
+    },
+    {
+      "test": "Login page surfaces server error JSON on non-200, redirects to /dashboard on 200.",
+      "status": "pass",
+      "details": "if (!res.ok) { const body = await res.json().catch(() => ({})); setError(body.error ?? `Login failed (${res.status})`); return; } router.replace('/dashboard'). Uses useTransition for the in-flight state, button disables while pending."
+    },
+    {
+      "test": "Required UI strings are present (Welcome back, licenseNumber input, Sign in button, Pilot build footnote).",
+      "status": "pass",
+      "details": "Heading text 'Welcome back', input name='licenseNumber', button label 'Sign in' / 'Signing in...', footnote 'Pilot build. Your license number is your sign-in...'. Co-located vitest file asserts each via renderToStaticMarkup."
+    },
+    {
+      "test": "No forbidden placeholder strings in files[].content.",
+      "status": "pass",
+      "details": "Scanned all 9 file contents for TODO, FIXME, XXX, 'not implemented'. Zero matches across ~3 KB of source."
+    },
+    {
+      "test": "Developer notes are accurate and call out the cross-task assumptions.",
+      "status": "pass",
+      "details": "Note 1 (auth handler deferred to t-shell-2): consistent with EM scope. Note 2 (default license matches t-data-1 seed): traceable to the seed plan documented in the EM task. Note 3 (next-env.d.ts shipped verbatim): standard Next pattern, removes the first-run rewrite UX wart."
+    }
+  ],
+  "bugs": [],
+  "decision": "PASS"
+}

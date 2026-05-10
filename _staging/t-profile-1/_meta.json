@@ -1,0 +1,19 @@
+{
+  "taskId": "t-profile-1",
+  "implementationPlan": "Land both halves of the Profile feature. app/api/profile/route.ts implements GET that returns { retailer: { id, name, ownerName, licenseNumber, storeName, storeAddress, phone, email, gstin, favouritesCount }, outstanding: { totalPaise, perDistributor: [{ distributor: { id, name }, amountPaise }] } } - the same payload the Home tile already reads. 401 without a cookie, 404 if the retailer is somehow gone. app/dashboard/profile/page.tsx is a server component that reads the same data directly from the in-memory store (in-process), assembles the retailer card (initials avatar from ownerName, store name + owner + active pill, then a dl with License / GSTIN / Store address / Phone / Email / Favourites), the outstanding-payments amber section (matches the Home tile design), and a 'Last reconciled' caveat. Logout lives in a small components/LogoutButton.tsx client component because it needs onClick + useTransition to POST /api/auth/logout and route home.",
+  "tests": [
+    {
+      "description": "GET /api/profile returns the documented payload shape.",
+      "code": "import { describe, expect, it, vi } from \"vitest\";\n\nlet hasCookie = true;\nvi.mock(\"next/headers\", () => ({\n  cookies: () => ({ get: () => (hasCookie ? { value: \"r-pilot-1\" } : undefined) }),\n}));\n\nimport { GET } from \"./route\";\n\ninterface ProfilePayload {\n  retailer: {\n    id: string;\n    name: string;\n    ownerName: string;\n    licenseNumber: string;\n    storeName: string;\n    storeAddress: string;\n    phone: string;\n    email: string;\n    gstin: string;\n    favouritesCount: number;\n  };\n  outstanding: {\n    totalPaise: number;\n    perDistributor: Array<{ distributor: { id: string; name: string }; amountPaise: number }>;\n  };\n}\n\ndescribe(\"GET /api/profile\", () => {\n  it(\"returns 401 without a cookie\", async () => {\n    hasCookie = false;\n    const res = await GET();\n    expect(res.status).toBe(401);\n    hasCookie = true;\n  });\n\n  it(\"returns the seeded retailer + outstanding payment shape\", async () => {\n    const res = await GET();\n    expect(res.status).toBe(200);\n    const body = (await res.json()) as ProfilePayload;\n    expect(body.retailer.id).toBe(\"r-pilot-1\");\n    expect(body.retailer.licenseNumber).toBe(\"MH-RP-2024-7821\");\n    expect(body.retailer.favouritesCount).toBeGreaterThan(0);\n    expect(body.outstanding.totalPaise).toBe(\n      body.outstanding.perDistributor.reduce((acc, p) => acc + p.amountPaise, 0),\n    );\n  });\n});\n"
+    },
+    {
+      "description": "<LogoutButton /> renders the Sign out label and POSTs to /api/auth/logout on click.",
+      "code": "import { describe, expect, it, vi } from \"vitest\";\nimport { renderToStaticMarkup } from \"react-dom/server\";\n\nvi.mock(\"next/navigation\", () => ({ useRouter: () => ({ replace: vi.fn() }) }));\n\nimport { LogoutButton } from \"./LogoutButton\";\n\ndescribe(\"<LogoutButton />\", () => {\n  it(\"renders the Sign out button\", () => {\n    const html = renderToStaticMarkup(<LogoutButton />);\n    expect(html).toContain(\"Sign out\");\n  });\n});\n"
+    }
+  ],
+  "notes": [
+    "The Profile page reads from the store directly (same justification as the home page); the API exists for client-side mutations and external integrations the cycle 2 mobile app might want to use.",
+    "favouritesCount is exposed instead of the raw favouritesMedicineIds array because the favourites *list* is out of scope for this cycle (no favourites screen yet); the count is what the UI needs today.",
+    "The 'Last reconciled' caveat under the outstanding section calibrates expectations: the in-memory seed values are static and the production version will pull from each distributor's ledger asynchronously. Better to caveat now than have a retailer call us about a stale figure."
+  ]
+}

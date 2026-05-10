@@ -1,0 +1,14 @@
+{
+  "taskId": "t-landing-page-3",
+  "summary": "Audited the new landing-page UI at app/page.tsx. The page is a single Client Component that captures one input (email), validates it client-side against the same regex the server uses, posts JSON to the same-origin /api/signup, and renders one of three plain-text response messages. There is no dangerouslySetInnerHTML, no eval-equivalent, no third-party script tag, no LLM-mediated I/O, and no untrusted source for any rendered string (every string is either a static literal in this file or one of three hard-coded response messages). One low-severity defence-in-depth observation about CSRF for cookie-bearing requests is recorded for the production hardening pass; it does not block this delivery. No critical, high, or medium issues. Decision: GO.",
+  "vulnerabilities": [
+    {
+      "severity": "low",
+      "description": "The form posts to /api/signup as a same-origin fetch with content-type application/json. There is no CSRF protection (no token, no SameSite cookie check). For the current MVP this is fine because the endpoint accepts no authenticated user state and the worst-case forged request is the same as a legitimate one (a signup row). Once the product grows authenticated state — e.g. a user's saved waitlist position or referral credit — the endpoint will need CSRF defences and/or SameSite=strict cookies.",
+      "recommendation": "When authenticated state is added in a future cycle, add a CSRF token round-trip (or rely on the framework's middleware) before extending /api/signup with anything that reads or writes per-user state. No change needed for this delivery."
+    }
+  ],
+  "promptInjectionRisk": "Negligible. The user provides only an email address, which is validated against a strict regex on the client and again on the server (t-signup-storage-2). The success / duplicate / error messages rendered to the user are static literals defined in this file — none of the rendered strings include user input or model output. The page does not render arbitrary HTML from any source (no dangerouslySetInnerHTML), does not execute any user-supplied script, and does not pass user input to an LLM at any point in the request lifecycle. The only persisted artefact of a user visit is the signup row, which is itself never rendered back into the page. Effective injection surface for this task is zero.",
+  "decision": "GO",
+  "requiredFixes": []
+}

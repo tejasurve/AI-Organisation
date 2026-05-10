@@ -1,0 +1,19 @@
+{
+  "mission": "Help an indie founder validate a SaaS concept by shipping a credible, mobile-first landing page that turns visitors into qualified signups within a week.",
+  "okrs": [
+    "Ship a public landing page on a real domain within 7 days, with one above-the-fold call-to-action and a working signup form",
+    "Capture 100 verified email signups in the first 14 days post-launch with a visitor → signup conversion rate of at least 5%",
+    "Reach a clear go/no-go decision on building the SaaS product within 21 days, based on signup volume + 5 follow-up interviews"
+  ],
+  "priorities": [
+    "Stand up the landing page UI (hero, features, signup form, footer)",
+    "Implement the signup capture endpoint and persistence layer",
+    "Wire basic conversion analytics so we can measure the OKR"
+  ],
+  "delegation": {
+    "cto": "Stand up a one-page Next.js 14 + Tailwind landing site on Vercel that captures email signups via a single POST /api/signup route. Persistence is Postgres via Drizzle. No auth, no payments, no dashboard this cycle. Ship by end of day 5.",
+    "cmo": "Skip — no paid acquisition this cycle. We will route inbound traffic from one Show HN post and a single LinkedIn post on launch day.",
+    "cfo": "",
+    "cpo": "Define the value proposition in one sentence, the 3 feature bullets shown above the fold, and the form's empty / loading / success / error microcopy. Deliver to CTO by end of day 2."
+  }
+}

@@ -1,0 +1,63 @@
+{
+  "taskId": "t-signup-storage-2",
+  "testPlan": [
+    "Verify the file set lives at the expected paths: app/api/signup/route.ts (Next.js App Router Route Handler) and lib/db/client.ts (storage adapter).",
+    "Verify the request shape matches the CTO contract: { email: string, source?: string }.",
+    "Verify the response shape matches the CTO contract on the queued path: { id: uuid, status: 'queued' }.",
+    "Verify the response shape on the duplicate path: { id: <original uuid>, status: 'duplicate' }, with dedup applied case-insensitively per the unique(email) Drizzle constraint.",
+    "Verify input validation: malformed email → 400; non-JSON body → 400.",
+    "Verify the source default: missing or whitespace-only source → 'landing-v1' per the CTO contract.",
+    "Verify lib/db/client.ts imports the row shape from the AI-generated Drizzle schema (Signup = $inferSelect) so the schema remains the source of truth.",
+    "Search files[].content for forbidden placeholder strings (TODO, FIXME, XXX, 'not implemented').",
+    "Verify the developer notes accurately surface the in-memory storage trade-off and the deferred rate-limiting concern from the CTO risks list."
+  ],
+  "results": [
+    {
+      "test": "File set is at the architecturally correct paths.",
+      "status": "pass",
+      "details": "files[0].path = app/api/signup/route.ts (matches CTO API contract endpoint /api/signup), files[1].path = lib/db/client.ts. Both repo-relative, forward-slashed."
+    },
+    {
+      "test": "Request shape matches the CTO contract.",
+      "status": "pass",
+      "details": "Route handler reads obj.email (string), obj.source (string | undefined). Coerces non-strings to empty and rejects via the email regex. Matches { email: string, source?: string }."
+    },
+    {
+      "test": "Response shape on queued path matches the CTO contract.",
+      "status": "pass",
+      "details": "On insert: NextResponse.json({ id: inserted.id, status: 'queued' }). id is a UUID v4 from crypto.randomUUID() (regex-asserted in test 1). 200 status."
+    },
+    {
+      "test": "Response shape on duplicate path matches the CTO contract (case-insensitive dedup).",
+      "status": "pass",
+      "details": "findSignupByEmail() lowercases the lookup key; insertSignup() stores by lowercased key. Test 2 submits 'founder@indie.com' then 'FOUNDER@INDIE.COM' and asserts the second response has status='duplicate' AND the same id as the first. countSignups() stays at 1."
+    },
+    {
+      "test": "Input validation rejects malformed email and non-JSON body with 400.",
+      "status": "pass",
+      "details": "EMAIL_RE = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/; non-matches return 400 with { error: 'email is required and must be a valid email address' } (test 3). req.json() throws on non-JSON, caught and converted to 400 with { error: 'invalid JSON body' } (test 4)."
+    },
+    {
+      "test": "Source default behaves per the CTO contract.",
+      "status": "pass",
+      "details": "Test 5 verifies a custom 'hn-launch' source is preserved in the stored row. Test 6 verifies that both missing source and whitespace-only source ('   '.trim() → '') fall back to 'landing-v1'. Both branches exercised."
+    },
+    {
+      "test": "lib/db/client.ts uses the AI-generated Drizzle schema as the row-shape source of truth.",
+      "status": "pass",
+      "details": "lib/db/client.ts opens with `import type { Signup } from \"./schema/signups\";`. Map<string, Signup> ensures rows can never drift from the Drizzle column set. insertSignup signature is (row: Signup) => Signup; the route handler passes { id, email, source, createdAt } which is exactly Signup's shape."
+    },
+    {
+      "test": "No forbidden placeholder strings.",
+      "status": "pass",
+      "details": "Scanned both file contents for TODO, FIXME, XXX, 'not implemented'. Zero matches."
+    },
+    {
+      "test": "Developer notes accurately document trade-offs and deferred concerns.",
+      "status": "pass",
+      "details": "Note 1 documents the in-memory adapter and explicitly references the 1-file upgrade path to drizzle-orm/postgres-js. Note 3 explicitly recalls the CTO's 'IP-based rate limiting (e.g. 5 req/min)' risk and proposes a follow-up task — accurate provenance back to the CTO output."
+    }
+  ],
+  "bugs": [],
+  "decision": "PASS"
+}

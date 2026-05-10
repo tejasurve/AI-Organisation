@@ -1,0 +1,24 @@
+{
+  "taskId": "t-home-2",
+  "summary": "Audited the Home tab UI and the search results destination it links to. The change ships two server pages (home + search) and two client components (SearchBar + MedicineRow). Server components read the session and the in-memory store synchronously; client components only call documented authenticated endpoints (POST /api/cart/items). No critical or high-severity vulnerabilities were found. One medium-severity item (search query reflected back to the page heading) is recorded; React's escaping makes it non-exploitable but flagging as a defence-in-depth note. Two low-severity items round out the audit.",
+  "vulnerabilities": [
+    {
+      "severity": "medium",
+      "description": "app/dashboard/search/page.tsx renders the user-supplied q query string directly into the page heading via JSX text interpolation: `Results for \"${q}\"`. React escapes text-content interpolation by design (q never reaches the DOM as raw HTML), so this is non-exploitable today. The medium rating is a defence-in-depth flag: any future change that switches this template to dangerouslySetInnerHTML or to a markdown renderer would immediately become reflected XSS, because q is only trimmed and is not length-capped or sanitised on the server.",
+      "recommendation": "Add a server-side max-length cap on q (e.g. q.slice(0, 80)) before rendering to defang both reflection-into-future-renderer and resource-exhaustion vectors. Pair with a /docs/code-review checklist note that the q variable is untrusted and must never be passed to a raw-HTML sink."
+    },
+    {
+      "severity": "low",
+      "description": "components/MedicineRow.tsx posts to /api/cart/items and surfaces server.error in inline UI text without scrubbing. If a future server change ever passes an attacker-influenced string into the error field of the response (e.g. a database error message that includes user input), it would render as plain text on the page. Currently the only error sources are typed JSON validators with hardcoded messages; risk is theoretical.",
+      "recommendation": "Cycle 2 hardening: enforce in lib/api/responses.ts that error fields are drawn from a closed enum of safe-to-display strings (e.g. 'invalid request', 'medicine not found', 'unauthorised'), and rely on logs for any operator-relevant detail. Also keep the existing fall-through string ('Add to cart failed (status)') so accidental HTML in error never reaches the DOM."
+    },
+    {
+      "severity": "low",
+      "description": "The home page server component reads the session and the store directly without any error boundary above the children. A bug in lib/db/store.ts that throws synchronously would crash the entire dashboard route to a Next 500 page, leaking the stack trace to anyone with the dashboard cookie. Not an externally-reachable surface today (cookie is required), but worth recording.",
+      "recommendation": "Add an app/dashboard/error.tsx error boundary that renders a friendly retry UI. Cycle 2 hardening; non-blocking for the pilot."
+    }
+  ],
+  "promptInjectionRisk": "None. No file in the change set issues an LLM call, performs LLM-mediated I/O, renders untrusted text as raw HTML (React escapes all text interpolation), or executes shell or filesystem operations. The q query string flows only through server-side .toLowerCase() + .includes() against in-memory rows and into React text nodes which are escaped before reaching the DOM.",
+  "decision": "GO",
+  "requiredFixes": []
+}

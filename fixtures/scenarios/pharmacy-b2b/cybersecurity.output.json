@@ -1,0 +1,19 @@
+{
+  "taskId": "t-shell-1",
+  "summary": "Audited the Next.js + Tailwind project skeleton plus the public login page UI. The change ships configuration files (package.json, tsconfig.json, next.config.mjs, postcss/tailwind configs, next-env.d.ts), a single Tailwind stylesheet, the html/body layout, and one client login page that POSTs to a not-yet-implemented /api/auth/login endpoint. No critical or high-severity vulnerabilities were found. Two low-severity items are worth recording for the next-cycle backlog (default license value and missing CSP) but neither blocks proceed for the pilot.",
+  "vulnerabilities": [
+    {
+      "severity": "low",
+      "description": "app/page.tsx pre-fills the license-number input with the seed pilot retailer ('MH-RP-2024-7821'). This is a deliberate developer-experience choice for the pilot demo so a fresh `npm run dev` works on the first try, but if this build is reused for other retailers the pre-filled value leaks who the pilot retailer is to anyone who lands on the login page. Not exploitable on its own.",
+      "recommendation": "Before any non-pilot rollout, remove the default value and ship an empty input with placeholder-only guidance. Pair with a deployment flag (e.g. NEXT_PUBLIC_DEMO_LOGIN_LICENSE) that controls pre-fill so the pilot UX survives only in the demo build."
+    },
+    {
+      "severity": "low",
+      "description": "next.config.mjs does not declare a Content-Security-Policy or any of the recommended hardening headers (Strict-Transport-Security, X-Frame-Options, Referrer-Policy, Permissions-Policy). The login page is a public surface and should be defence-in-depth even though the only network call it makes is same-origin.",
+      "recommendation": "In a follow-up task (cycle 2 hardening) add a `headers()` block to next.config.mjs returning the standard set: CSP `default-src 'self'`, HSTS, X-Frame-Options DENY, Referrer-Policy strict-origin-when-cross-origin, Permissions-Policy with camera/microphone/geolocation off. Cycle 1 ships without these because we don't yet have an authenticated surface to protect."
+    }
+  ],
+  "promptInjectionRisk": "Negligible. The skeleton ships no LLM-mediated I/O, no markdown rendering of untrusted content, and no shell or filesystem access from any handler (the auth handler itself doesn't exist yet). The login page renders only the user's own input through React's escaping; there is no path through which untrusted text reaches a model prompt or the DOM as raw HTML.",
+  "decision": "GO",
+  "requiredFixes": []
+}

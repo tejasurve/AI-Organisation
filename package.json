@@ -15,15 +15,20 @@
     "test:all": "npm run test && npm run test:agents && npm run test:handoffs",
     "pipeline": "node scripts/run-pipeline.ts --scenario fixtures/scenarios/waitlist-mvp",
     "validate": "node scripts/validate-em-output.ts",
+    "verify:generated": "node scripts/verify-generated.ts",
     "typecheck": "tsc --noEmit",
     "demo:real-llm": "node scripts/demo-real-llm.ts"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
+    "@types/pdf-parse": "^1.1.5",
+    "@types/pdfkit": "^0.17.6",
+    "pdf-parse": "^2.4.5",
     "typescript": "^5.6.0"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.92.0",
-    "openai": "^6.35.0"
+    "openai": "^6.35.0",
+    "pdfkit": "^0.18.0"
   }
 }

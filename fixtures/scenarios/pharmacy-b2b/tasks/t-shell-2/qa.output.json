@@ -1,0 +1,75 @@
+{
+  "taskId": "t-shell-2",
+  "testPlan": [
+    "Verify the file set lands the auth surface: lib/auth/session.ts, app/api/auth/login/route.ts, app/api/auth/logout/route.ts, middleware.ts (project root), app/dashboard/layout.tsx, app/dashboard/page.tsx, components/BottomTabBar.tsx.",
+    "Verify the cookie name and max-age in lib/auth/session.ts match the CTO contract (pharmacy-session, 30 days = 60*60*24*30 seconds).",
+    "Verify the login handler validates the body, returns 400 on missing/invalid JSON, 404 on unknown license, sets the cookie HttpOnly+SameSite=Lax+path=/ on success, and returns the documented retailer summary shape.",
+    "Verify the logout handler clears the cookie and returns { ok: true }.",
+    "Verify middleware.ts uses the documented matcher set (/dashboard/:path*, /api/:path*), permits /api/auth/login through, returns NextResponse.json 401 for /api/* without the cookie, and redirects /dashboard/* without the cookie to /.",
+    "Verify the dashboard layout is a server component that calls getSession + getRetailer and redirects to / when either is missing (defence-in-depth on top of middleware).",
+    "Verify app/dashboard/page.tsx redirects to /dashboard/home so the bare /dashboard URL never renders.",
+    "Verify components/BottomTabBar.tsx is a client component, uses usePathname for active state, declares all 4 tabs with the canonical hrefs, and renders accessible inline SVG icons (no external icon dep).",
+    "Search files[].content for forbidden placeholder strings (TODO, FIXME, XXX, 'not implemented').",
+    "Verify the developer notes accurately surface: cookie is unsigned for cycle 1 (pinned to CTO risk), client-component split is intentional (Next 14 requirement), middleware avoids next/headers due to Edge-runtime barrier.",
+    "Verify the two co-located vitest files cover the cookie-name/max-age contract and the middleware decision matrix (5 cases: non-matched, login, /api/* unauthenticated, /dashboard/* unauthenticated, /dashboard/* authenticated)."
+  ],
+  "results": [
+    {
+      "test": "File set matches the auth-shell architecture (7 files at the documented paths).",
+      "status": "pass",
+      "details": "Declared paths: lib/auth/session.ts, app/api/auth/login/route.ts, app/api/auth/logout/route.ts, middleware.ts, app/dashboard/layout.tsx, app/dashboard/page.tsx, components/BottomTabBar.tsx. All repo-relative, forward-slashed, none escape the project root."
+    },
+    {
+      "test": "Cookie name and max-age in lib/auth/session.ts match the CTO contract.",
+      "status": "pass",
+      "details": "SESSION_COOKIE = 'pharmacy-session'. SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 30 = 2,592,000 seconds (30 days). Both exported as const so consumers (login handler) cannot drift from the contract."
+    },
+    {
+      "test": "Login handler validates the body and uses the right status codes.",
+      "status": "pass",
+      "details": "1) try/catch on req.json() -> 400 'invalid JSON body' on parse failure. 2) Empty/whitespace licenseNumber -> 400 'licenseNumber is required'. 3) findRetailerByLicense miss -> 404 'no retailer found for that license number'. 4) Hit -> cookies().set({ name, value, httpOnly: true, sameSite: 'lax', path: '/', maxAge }), returns { retailer: { id, name, storeName, licenseNumber } } per the CTO contract."
+    },
+    {
+      "test": "Logout handler deletes the cookie and returns { ok: true }.",
+      "status": "pass",
+      "details": "cookies().delete(SESSION_COOKIE); NextResponse.json({ ok: true }). Imports SESSION_COOKIE from the shared session module so the cookie name cannot drift."
+    },
+    {
+      "test": "middleware.ts gates the right paths and returns the right responses for each branch.",
+      "status": "pass",
+      "details": "matcher = ['/dashboard/:path*', '/api/:path*']. Branch 1 (non-matched, defence-in-depth): NextResponse.next(). Branch 2 (/api/auth/login allowlisted): NextResponse.next(). Branch 3 (/api/* w/o cookie): NextResponse.json({ error: 'unauthenticated' }, { status: 401 }). Branch 4 (/dashboard/* w/o cookie): NextResponse.redirect(url with pathname='/'). Branch 5 (with cookie): NextResponse.next()."
+    },
+    {
+      "test": "Dashboard layout doubles as a server-side guard.",
+      "status": "pass",
+      "details": "app/dashboard/layout.tsx is a server component (no 'use client', no React hooks at module level). Calls getSession() and getRetailer(); on either missing -> redirect('/'). Defence in depth on top of the middleware: protects against the matcher slipping in a future config edit."
+    },
+    {
+      "test": "Bare /dashboard URL is redirected to /dashboard/home.",
+      "status": "pass",
+      "details": "app/dashboard/page.tsx is a server component that immediately calls redirect('/dashboard/home'). Combined with the layout guard, an unauthenticated user typing /dashboard hits / instead of a blank page."
+    },
+    {
+      "test": "BottomTabBar is the documented client component with all 4 tabs.",
+      "status": "pass",
+      "details": "'use client' on line 1. TABS array declares /dashboard/{home,orders,cart,profile} with the documented labels. usePathname() drives active state. SVG icons are inline (no react-icons or lucide dep added). aria-current='page' on the active tab for screen readers; aria-label='Primary' on the nav element."
+    },
+    {
+      "test": "No forbidden placeholder strings.",
+      "status": "pass",
+      "details": "Scanned all 7 file contents for TODO, FIXME, XXX, 'not implemented'. Zero matches across ~5 KB of source."
+    },
+    {
+      "test": "Developer notes are accurate and explain the structural choices.",
+      "status": "pass",
+      "details": "Note 1 (unsigned cookie): consistent with CTO risks list (mock cookie auth is documented as cycle-1 only). Note 2 (BottomTabBar client/server split): correct application of the Next 14 RSC rules. Note 3 (middleware doesn't import session helper): correct - Next middleware runs on the Edge runtime and cannot use next/headers cookies(); reading via NextRequest.cookies is the canonical workaround."
+    },
+    {
+      "test": "Vitest files cover the cookie contract and the middleware decision matrix.",
+      "status": "pass",
+      "details": "session.test.ts: 3 it-blocks asserting SESSION_COOKIE, SESSION_MAX_AGE_SECONDS, getSession() return shape (with next/headers mocked). middleware.test.ts: 5 it-blocks covering non-matched, login allowlist, /api/* 401, /dashboard/* redirect, authenticated pass-through. Together they cover every branch of the auth state machine."
+    }
+  ],
+  "bugs": [],
+  "decision": "PASS"
+}
