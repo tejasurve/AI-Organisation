@@ -121,6 +121,92 @@ export interface SecurityOutput {
   requiredFixes: string[];
 }
 
+// ---------- Product Owner ----------
+
+export type FeaturePriority = "must" | "should" | "could" | "wont";
+
+export interface ProductOwnerPersona {
+  name: string;
+  context: string;
+  needs: string[];
+}
+
+export interface ProductOwnerFeature {
+  id: string;
+  name: string;
+  userJob: string;
+  valueHypothesis: string;
+  primaryUser: string;
+  acceptanceSignals: string[];
+  priority: FeaturePriority;
+}
+
+export interface ProductOwnerOutput {
+  personas: ProductOwnerPersona[];
+  features: ProductOwnerFeature[];
+  openQuestions: string[];
+  outOfScope: string[];
+}
+
+// ---------- Solution Architect ----------
+
+export type NFRCategory =
+  | "performance"
+  | "availability"
+  | "security"
+  | "privacy"
+  | "scalability"
+  | "observability"
+  | "accessibility"
+  | "compliance";
+
+export type IntegrationDirection = "inbound" | "outbound" | "bidirectional";
+
+export interface BoundedContext {
+  name: string;
+  purpose: string;
+  owns: string[];
+  publishes: string[];
+  subscribes: string[];
+}
+
+export interface IntegrationPoint {
+  name: string;
+  protocol: string;
+  direction: IntegrationDirection;
+  notes: string;
+}
+
+export interface NonFunctionalRequirement {
+  category: NFRCategory;
+  requirement: string;
+  rationale: string;
+}
+
+export interface ArchitectureDecisionRecord {
+  title: string;
+  decision: string;
+  rationale: string;
+  alternatives: string[];
+  consequences: string[];
+}
+
+export interface ArchitectureRisk {
+  risk: string;
+  mitigation: string;
+  owner: string;
+}
+
+export interface SolutionArchitectOutput {
+  hldSummary: string;
+  boundedContexts: BoundedContext[];
+  systemDiagramMermaid: string;
+  integrationPoints: IntegrationPoint[];
+  nfrs: NonFunctionalRequirement[];
+  adrs: ArchitectureDecisionRecord[];
+  risks: ArchitectureRisk[];
+}
+
 // ---------- Re-exports for convenience ----------
 
 export type { EMOutput, Feature, Task };
@@ -129,8 +215,11 @@ export type { EMOutput, Feature, Task };
 
 export const AGENT_NAMES = [
   "ceo",
+  "product-owner",
+  "solution-architect",
   "cto",
   "engineering-manager",
+  "designer",
   "developer",
   "qa",
   "cybersecurity",

@@ -15,6 +15,12 @@ out/
 # Generated artefacts (agent runtime outputs, scaffolded code, etc.)
 generated/
 
+# Auto-generated persona bundle — rebuilt by predev/prebuild from agents/*/config.json
+lib/platform/personas/personas.generated.ts
+
+# Simulation event log (replayable JSONL bus persistence)
+.simulation/
+
 # Logs
 logs/
 *.log

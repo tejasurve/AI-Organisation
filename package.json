@@ -2,7 +2,7 @@
   "name": "ai-organisation",
   "version": "0.1.0",
   "private": true,
-  "description": "Managed AI organisation as a service. Entrepreneur submits an idea; an AI team (CEO → CTO → EM → Developer → QA → Security) runs the pipeline and writes real code to disk.",
+  "description": "Managed AI organisation as a service. Entrepreneur submits an idea; an AI team (CEO → CTO → EM → Developer → QA → Security) runs the pipeline and writes real code to disk. Now with a live office simulation layer.",
   "type": "module",
   "engines": {
     "node": ">=22.6"
@@ -14,21 +14,47 @@
     "test:handoffs": "node scripts/test-handoff.mjs agents/ceo agents/cto && node scripts/test-handoff.mjs agents/cto agents/engineering-manager && node scripts/test-handoff.mjs agents/developer agents/qa && node scripts/test-handoff.mjs agents/qa agents/cybersecurity",
     "test:all": "npm run test && npm run test:agents && npm run test:handoffs",
     "pipeline": "node scripts/run-pipeline.ts --scenario fixtures/scenarios/waitlist-mvp",
+    "pipeline:sim": "node scripts/run-pipeline.ts --scenario fixtures/scenarios/waitlist-mvp --emit-sim",
     "validate": "node scripts/validate-em-output.ts",
     "verify:generated": "node scripts/verify-generated.ts",
     "typecheck": "tsc --noEmit",
-    "demo:real-llm": "node scripts/demo-real-llm.ts"
+    "typecheck:web": "tsc -p tsconfig.web.json --noEmit",
+    "demo:real-llm": "node scripts/demo-real-llm.ts",
+    "personas:build": "node scripts/build-personas.mjs",
+    "predev": "node scripts/build-personas.mjs",
+    "dev": "next dev",
+    "prebuild": "node scripts/build-personas.mjs",
+    "build": "next build",
+    "start": "next start"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
     "@types/pdf-parse": "^1.1.5",
     "@types/pdfkit": "^0.17.6",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@types/three": "^0.170.0",
+    "@types/uuid": "^10.0.0",
+    "autoprefixer": "^10.4.20",
     "pdf-parse": "^2.4.5",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.15",
     "typescript": "^5.6.0"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.92.0",
+    "@google/generative-ai": "^0.24.1",
+    "@react-three/drei": "^9.114.0",
+    "@react-three/fiber": "^8.17.10",
+    "framer-motion": "^11.11.17",
+    "mermaid": "^11.15.0",
+    "next": "14.2.35",
     "openai": "^6.35.0",
-    "pdfkit": "^0.18.0"
+    "pdfkit": "^0.18.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "three": "^0.170.0",
+    "uuid": "^14.0.0",
+    "zustand": "^5.0.1"
   }
 }

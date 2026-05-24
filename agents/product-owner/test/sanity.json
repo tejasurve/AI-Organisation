@@ -1,0 +1,17 @@
+{
+  "skillsMustMention": [
+    "Job",
+    "MoSCoW",
+    "acceptance",
+    "out-of-scope",
+    "Solution Architect",
+    "Designer",
+    "CEO"
+  ],
+  "promptMustMention": [
+    "=== CEO Output ===",
+    "=== Company Context ===",
+    "userJob",
+    "minimum-valid"
+  ]
+}

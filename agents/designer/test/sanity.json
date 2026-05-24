@@ -1,0 +1,43 @@
+{
+  "skillsMustMention": [
+    "Engineering Manager",
+    "Stitch",
+    "Figma",
+    "empty state",
+    "minimal",
+    "playful",
+    "dense",
+    "premium",
+    "redesign",
+    "tokens",
+    "palette",
+    "anti-pattern"
+  ],
+  "promptMustMention": [
+    "=== Task ===",
+    "=== Feature ===",
+    "=== CTO Output ===",
+    "=== Brand Tokens ===",
+    "=== Company Context ===",
+    "taskId",
+    "designPlan",
+    "screens",
+    "tokens",
+    "stitchScreenId",
+    "figmaUrl",
+    "minimal",
+    "playful",
+    "dense",
+    "premium",
+    "t-search-entry-1"
+  ],
+  "outputIntegrityRules": [
+    {
+      "name": "every screen names at least one component",
+      "type": "groupCount",
+      "child": "screens",
+      "groupBy": "name",
+      "min": 1
+    }
+  ]
+}

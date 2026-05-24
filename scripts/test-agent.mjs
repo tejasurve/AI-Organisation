@@ -209,6 +209,7 @@ const EXPECTED_MODELS = {
   cmo: "claude-opus-4-7-high",
   cpo: "claude-opus-4-7-high",
   "solution-architect": "claude-opus-4-7-high",
+  "product-owner": "claude-opus-4-7-high",
   "engineering-manager": "claude-opus-4-7-high",
   designer: "claude-opus-4-7-high",
   analyst: "claude-opus-4-7-high",

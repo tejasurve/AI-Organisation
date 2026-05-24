@@ -24,6 +24,6 @@
 
     "useDefineForClassFields": true
   },
-  "include": ["lib/**/*.ts", "scripts/**/*.ts"],
-  "exclude": ["node_modules", "generated", "fixtures", "agents"]
+  "include": ["lib/runtime/**/*.ts", "lib/schemas/**/*.ts", "lib/validation/**/*.ts", "lib/simulation/**/*.ts", "scripts/**/*.ts"],
+  "exclude": ["node_modules", "generated", "fixtures", "agents", ".next", "app", "components", "stores"]
 }

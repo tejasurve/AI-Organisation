@@ -1,0 +1,18 @@
+{
+  "skillsMustMention": [
+    "bounded",
+    "ADR",
+    "NFR",
+    "Mermaid",
+    "integration",
+    "Product Owner",
+    "CTO"
+  ],
+  "promptMustMention": [
+    "=== CEO Output ===",
+    "=== Product Owner Output ===",
+    "=== Company Context ===",
+    "HLD",
+    "minimum-valid"
+  ]
+}

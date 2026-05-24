@@ -14,6 +14,7 @@ export * from "./logger.ts";
 export * from "./pipeline.ts";
 export * from "./report.ts";
 export * from "./report-pdf.ts";
+export * from "./simulation-logger.ts";
 export * from "./task-body.ts";
 export * from "./task-routing-runner.ts";
 export * from "./verify-helpers.ts";

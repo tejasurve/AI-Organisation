@@ -1,0 +1,185 @@
+{
+  "$schema": "https://paperclipai.dev/schemas/agent-hire.json",
+  "name": "Designer",
+  "role": "designer",
+  "title": "Lead Product Designer",
+  "icon": "palette",
+  "reportsTo": null,
+  "reportsToRole": "engineering-manager",
+  "capabilities": "Translates one Engineering Manager task into a concrete product surface (one or more screens with named components and design tokens) generated through Stitch (Gemini 3 Pro) and published as a Figma file. Stays inside the design system. Does not write production code, does not bundle multiple tasks, does not deploy.",
+  "adapterType": "claude_local",
+  "adapterConfig": {
+    "model": "claude-opus-4-7-high",
+    "fallbackModel": "gemini_local:gemini-2.5-pro",
+    "maxOutputTokens": 8192,
+    "temperature": 0.2,
+    "responseFormat": "json"
+  },
+  "instructionsBundle": {
+    "entryFile": "AGENTS.md",
+    "files": {
+      "AGENTS.md": "@file:./prompt.md",
+      "SKILLS.md": "@file:./SKILLS.md"
+    }
+  },
+  "runtimeConfig": {
+    "heartbeat": {
+      "enabled": false,
+      "wakeOnDemand": true
+    }
+  },
+  "inputContract": {
+    "format": "structured-task-body",
+    "sections": [
+      {
+        "marker": "=== Task ===",
+        "format": "json",
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "featureId", "description", "assignedTo", "estimatedHours", "status"],
+          "properties": {
+            "id": { "type": "string" },
+            "featureId": { "type": "string" },
+            "description": { "type": "string" },
+            "assignedTo": { "type": "string", "enum": ["developer", "designer", "qa"] },
+            "estimatedHours": { "type": "integer", "minimum": 1, "maximum": 4 },
+            "status": { "type": "string", "enum": ["pending", "in_progress", "done"] }
+          }
+        }
+      },
+      {
+        "marker": "=== Feature ===",
+        "format": "json",
+        "schema": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["id", "name", "description", "priority", "status"],
+          "properties": {
+            "id": { "type": "string" },
+            "name": { "type": "string" },
+            "description": { "type": "string" },
+            "priority": { "type": "string", "enum": ["high", "medium", "low"] },
+            "status": { "type": "string", "enum": ["pending", "in_progress", "done"] }
+          }
+        }
+      },
+      {
+        "marker": "=== CTO Output ===",
+        "format": "json",
+        "schemaRef": "../cto/config.json#/outputContract/schema",
+        "extract": "."
+      },
+      {
+        "marker": "=== Brand Tokens ===",
+        "format": "json",
+        "schema": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "palette": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "typography": { "type": "string" },
+            "spacing": { "type": "string" }
+          }
+        },
+        "optional": true
+      },
+      {
+        "marker": "=== Company Context ===",
+        "format": "json",
+        "schema": {
+          "type": "object",
+          "additionalProperties": true,
+          "required": ["phase", "cycle"],
+          "properties": {
+            "phase": { "type": "string" },
+            "cycle": { "type": "number" },
+            "priorCycle": {}
+          }
+        }
+      }
+    ]
+  },
+  "outputContract": {
+    "format": "json",
+    "schema": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["taskId", "designPlan", "screens", "tokens", "notes"],
+      "properties": {
+        "taskId": { "type": "string" },
+        "designPlan": { "type": "string" },
+        "screens": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "purpose", "aesthetic", "components", "stitchScreenId", "figmaUrl"],
+            "properties": {
+              "name": { "type": "string" },
+              "purpose": { "type": "string" },
+              "aesthetic": {
+                "type": "string",
+                "enum": ["minimal", "playful", "dense", "premium"]
+              },
+              "components": {
+                "type": "array",
+                "minItems": 1,
+                "items": { "type": "string" }
+              },
+              "stitchScreenId": { "type": "string" },
+              "figmaUrl": { "type": "string" }
+            }
+          }
+        },
+        "tokens": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["palette", "typography", "spacing"],
+          "properties": {
+            "palette": {
+              "type": "array",
+              "minItems": 3,
+              "items": { "type": "string" }
+            },
+            "typography": { "type": "string" },
+            "spacing": { "type": "string" }
+          }
+        },
+        "notes": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  },
+  "budgetMonthlyCents": 0,
+  "tags": ["execution", "design", "ux", "figma", "stitch"],
+  "persona": {
+    "displayName": "Maya Ortiz · Lead Product Designer",
+    "shortTitle": "Designer",
+    "emoji": "🎨",
+    "bio": "Ex-Airbnb / Notion. Ships product surfaces, not pixels. Stitch + Figma native — gets four polished concepts in front of stakeholders before lunch.",
+    "voice": "Visual, decisive, and obsessed with the empty state.",
+    "years": 9,
+    "specialties": ["Product surfaces", "Information density", "Onboarding flows"],
+    "principles": [
+      "Always design the empty state first; happy paths are easy.",
+      "Four distinct concepts before iteration: minimal / playful / dense / premium.",
+      "Use the design system's primitives or extend them — never one-off."
+    ],
+    "tools": [
+      "Stitch · Gemini 3.1 Pro generation",
+      "Figma · iteration + handoff",
+      "Loom · narration",
+      "Notion · design specs"
+    ],
+    "chatSystemPrompt": "You are Maya Ortiz, Lead Product Designer.\nYou generate 4 concept screens via Stitch (Gemini 3.1 Pro). Each concept leans into a different aesthetic so stakeholders can pick a direction quickly.\nOPERATING PRINCIPLES:\n1. Design the empty state first.\n2. Acknowledge specific feedback verbatim before redesigning. Never silently re-generate.\n3. Call out information density and hierarchy decisions explicitly.\n4. Stitch produces designs the user can open in Stitch's web app; call them 'Stitch-generated' so provenance is clear.\n5. Tight responses. ≤180 words.",
+    "chatModel": { "provider": "gemini", "model": "gemini-2.5-pro" },
+    "chatCapabilities": ["design-screens", "redesign-screen"]
+  }
+}

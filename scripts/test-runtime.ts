@@ -144,8 +144,18 @@ function makeMockRunner(overrides: Partial<FixtureSet>): AgentRunner {
     async run(inv: AgentInvocation): Promise<unknown> {
       const map: Record<AgentName, unknown> = {
         ceo: set.ceo,
+        // PO + SA are registered runtime agents but the legacy task-routing
+        // pipeline doesn't run them (the platform workflow orchestrates them
+        // directly). Return undefined to satisfy the exhaustive AgentName map.
+        "product-owner": undefined,
+        "solution-architect": undefined,
         cto: set.cto,
         "engineering-manager": set.em,
+        // The designer is a registered runtime agent but the current pipeline
+        // never routes work to it (tasks assignedTo "designer" are skipped at
+        // selection time). The mock therefore returns undefined to satisfy the
+        // exhaustive AgentName mapping without committing to a fixture shape.
+        designer: undefined,
         developer: set.developer,
         qa: set.qa,
         cybersecurity: set.cybersecurity,
